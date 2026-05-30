@@ -173,19 +173,31 @@ SEO all 100; Performance 98–99.
 - **SEO 90→100:** per-page `<svelte:head>` title + meta description on home, lesson, playground,
   search; descriptions added to done + glossary.
 
-### Why mobile Performance is 99, not 100
-The pages are technically optimal: TBT 0 ms, CLS 0, LCP ~0.99, Speed Index ~1.0, main-thread
-bootup ~0.1 s, no render-blocking resources, document 7.6 KB gzipped. The only sub-1.0 metric
-is **First Contentful Paint ≈ 1.65 s (score 0.93)** — and it is identical on the tiny home page
-and the large lesson page, because it is dominated by Lighthouse's **simulated slow-4G connection
-overhead** (DNS+TCP+TLS+request RTTs at 150 ms each, plus 4× CPU), not by page bytes or code.
-A perfect mobile 100 needs FCP ≈ 1.45 s, i.e. ~200 ms of fixed simulated transport latency that
-no app-level change removes.
+### Why mobile Performance is 99, not 100 — verified on the live deployment
+The pages are technically optimal: TBT 0 ms, CLS 0, LCP = FCP, Speed Index ~1.0, main-thread
+bootup ~0.1 s, **0 render-blocking resources**, document 7.6 KB transferred, total page 88 KB.
+The only sub-1.0 metric is **First Contentful Paint ≈ 1.58 s (score 0.94)** — identical on the
+tiny home page and the large lesson page.
 
-That last point is realistically a **deployment** lever, not an app lever: serving from a CDN
-edge over HTTP/2/3 with Brotli and `103 Early Hints` cuts the connection RTTs and typically
-lands mobile at 100. Recommend re-running Lighthouse against the production deployment to confirm.
-(`vite preview` is HTTP/1.1 — it already gzips, but can't multiplex or send early hints.)
+**Measured live (2026-05-30) on GitHub Pages / Fastly CDN, mobile preset:**
+
+| Route | P | A | BP | SEO | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|---|
+| `/` | **99** | 100 | 100 | 100 | 1.6 s | 1.6 s | 0 ms | 0 |
+| `/lesson/structural-typing` | **99** | 100 | 100 | 100 | 1.5 s | 1.6 s | 10 ms | 0 |
+
+The earlier hypothesis ("a real CDN over HTTP/2 + Brotli + Early Hints will land mobile at 100")
+is **disproven by this live measurement**. The CDN shaved only ~70 ms (TTFB 180 ms) because
+**Lighthouse mobile uses *simulated* (Lantern) throttling** — a fixed 150 ms-RTT / 1.6 Mbps / 4× CPU
+model applied to the request graph. It ignores the real transport entirely, so a faster real
+network cannot move the score.
+
+With zero render-blocking resources and a 7.6 KB document, FCP is already at its floor:
+simulated connection establishment (DNS + TCP + TLS ≈ 3 RTT) + TTFB ≈ 1.5 s. A perfect mobile
+FCP score needs ≈ 0.93 s, which is below that connection-setup floor for **any** page served from
+a third-party origin. **No app-level change removes it** — the page is at the theoretical optimum;
+the remaining 1 point is an artifact of the Lighthouse simulated-mobile network model.
+Desktop (real, unthrottled connection model) is a clean 100/100/100/100 on every route.
 
 ---
 
