@@ -1,0 +1,1084 @@
+/* ============================================================
+   TS for Pythonistas — global styles
+   Light by default; dark via [data-theme="dark"] or auto+prefers.
+   ============================================================ */
+
+:root {
+	--bg: #fbfbfa;
+	--bg-elev: #ffffff;
+	--fg: #1f2328;
+	--fg-muted: #545b64; /* darkened → AA (≥4.5:1) even on tinted sidebar/active backgrounds */
+	--border: #e2e3e5;
+	--accent: #1f5d9c; /* TS blue, deepened for AA on light bg as small text/links */
+	--accent-py: #ffd343; /* Python yellow */
+	--accent-py-ink: #2f6690; /* Python blue, darkened for AA on light bg */
+	--code-bg: #f6f8fa;
+	--code-border: #e6e8eb;
+	--sidebar-bg: #f3f3f1;
+	--sidebar-w: 290px;
+	--maxw: 820px;
+	--ok: #1a7f37;
+	--warn: #9a6700; /* A1.2: amber warning text, ~4.7:1 on light tinted bg */
+	--danger: #cf222e;
+	--focus-ring: #1f6feb; /* high-contrast focus ring, both themes */
+	--font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+		sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not([data-theme='light']) {
+		--bg: #0d1117;
+		--bg-elev: #161b22;
+		--fg: #e6edf3;
+		--fg-muted: #a4adba; /* A1.2: lightened from #9198a1 → ~5.5:1 on dark bg */
+		--border: #2a2f37;
+		--accent: #3178c6; /* keep dark accent at prior value (white-on-accent buttons unaffected) */
+		--accent-py-ink: #79c0ff; /* readable Python-blue on dark */
+		--code-bg: #161b22;
+		--code-border: #2a2f37;
+		--sidebar-bg: #0a0d12;
+		--warn: #d8a657; /* amber, AA on dark tinted bg */
+		--focus-ring: #58a6ff;
+	}
+}
+
+html[data-theme='dark'] {
+	--bg: #0d1117;
+	--bg-elev: #161b22;
+	--fg: #e6edf3;
+	--fg-muted: #a4adba;
+	--border: #2a2f37;
+	--accent: #3178c6;
+	--accent-py-ink: #79c0ff;
+	--code-bg: #161b22;
+	--code-border: #2a2f37;
+	--sidebar-bg: #0a0d12;
+	--warn: #d8a657;
+	--focus-ring: #58a6ff;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	background: var(--bg);
+	color: var(--fg);
+	font-family: var(--font-sans);
+	font-size: 18px;
+	line-height: 1.65;
+	-webkit-font-smoothing: antialiased;
+}
+
+a {
+	color: var(--accent);
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+
+/* WCAG 1.4.1: in-text content links must be distinguishable without relying on
+   color. Underline links inside prose body text; exclude button- and card-style
+   links (CTAs, roadmap entries) that carry their own affordance. */
+.prose a:not(.btn) {
+	text-decoration: underline;
+	text-underline-offset: 0.18em;
+}
+.prose .roadmap a,
+.prose .results a {
+	text-decoration: none;
+}
+
+/* ---------- global focus-visible ring (A1.1) ----------
+   One consistent, high-contrast ring for every keyboard-reachable control.
+   Uses :focus-visible so mouse clicks don't show the ring. */
+:where(a, button, summary, input, [tabindex], .btn, .navlink, .gloss-term):focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+/* Inputs already have a tight inset ring; keep their own offset readable. */
+input:focus-visible {
+	outline-offset: -1px;
+}
+
+/* ---------- skip link (a11y) ---------- */
+.skip-link {
+	position: fixed;
+	top: 0.5rem;
+	left: 0.5rem;
+	z-index: 2000;
+	padding: 0.5rem 0.9rem;
+	background: var(--accent);
+	color: #fff;
+	border-radius: 8px;
+	transform: translateY(-150%);
+	transition: transform 0.15s ease;
+}
+.skip-link:focus {
+	transform: none;
+	text-decoration: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.skip-link {
+		transition: none;
+	}
+}
+
+/* ---------- shell ---------- */
+.sidebar-wrap {
+	position: fixed;
+	inset: 0 auto 0 0;
+	width: var(--sidebar-w);
+	overflow-y: auto;
+	border-right: 1px solid var(--border);
+	background: var(--sidebar-bg);
+}
+.app-shell {
+	margin-left: var(--sidebar-w);
+	min-height: 100vh;
+}
+/* Drag handle straddling the sidebar's right edge (resize the nav). */
+.sidebar-resize {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: var(--sidebar-w);
+	width: 9px;
+	margin-left: -4px;
+	z-index: 35;
+	cursor: col-resize;
+	touch-action: none;
+	padding: 0;
+	border: none;
+	background: transparent;
+	appearance: none;
+	font: inherit;
+	color: inherit;
+}
+.sidebar-resize::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 50%;
+	width: 2px;
+	transform: translateX(-50%);
+	background: transparent;
+	transition: background 0.12s ease;
+}
+.sidebar-resize:hover::before,
+.sidebar-resize:focus-visible::before,
+.sidebar-resize.dragging::before {
+	background: var(--accent);
+}
+.sidebar-resize:focus-visible {
+	outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.sidebar-resize::before {
+		transition: none;
+	}
+}
+.content {
+	min-width: 0;
+}
+.page {
+	max-width: var(--maxw);
+	margin: 0 auto;
+	padding: 3.2rem 2rem 6rem;
+}
+
+/* A2.3: mobile top bar + drawer (hidden on desktop) */
+.mobile-bar {
+	display: none;
+}
+
+@media (max-width: 880px) {
+	.sidebar-wrap {
+		position: static;
+		width: auto;
+		height: auto;
+		overflow: visible;
+		border-right: none;
+		border-bottom: 1px solid var(--border);
+		background: var(--sidebar-bg);
+	}
+	.sidebar-resize {
+		display: none; /* sidebar is static/full-width on mobile — nothing to drag */
+	}
+	.app-shell {
+		margin-left: 0;
+	}
+	.page {
+		padding: 1.6rem 1.1rem 4rem;
+	}
+
+	.mobile-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.6rem 1rem;
+		gap: 0.6rem;
+	}
+	.mobile-brand {
+		padding: 0;
+		font-size: 1.1rem;
+	}
+	.hamburger {
+		font: inherit;
+		font-size: 0.9rem;
+		font-weight: 600;
+		padding: 0.45rem 0.8rem;
+		min-height: 44px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--bg-elev);
+		color: var(--fg);
+		cursor: pointer;
+	}
+
+	/* Drawer: collapsed by default on mobile, revealed when .open.
+	   Scoped with `.sidebar-wrap` so these win over the base `.sidebar`
+	   rules that are declared *later* in the file (equal-specificity,
+	   source-order would otherwise re-show the drawer and let it become the
+	   mobile LCP, pushing content down → layout shift). */
+	.sidebar-wrap .sidebar {
+		display: none;
+		border-top: 1px solid var(--border);
+	}
+	.sidebar-wrap .sidebar.open {
+		display: flex;
+	}
+	.desktop-brand {
+		display: none; /* mobile uses the bar's brand */
+	}
+}
+
+/* ---------- sidebar ---------- */
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	padding: 1.1rem 0.9rem 2rem;
+	gap: 0.4rem;
+}
+.brand {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.35rem;
+	padding: 0.4rem 0.6rem 0.8rem;
+	color: var(--fg);
+	font-weight: 700;
+	font-size: 1.25rem;
+}
+.brand:hover {
+	text-decoration: none;
+}
+.brand-py {
+	color: var(--accent-py-ink);
+}
+.brand-arrow {
+	color: var(--fg-muted);
+}
+.brand-ts {
+	color: var(--accent);
+}
+.brand-sub {
+	flex-basis: 100%;
+	font-size: 0.72rem;
+	font-weight: 500;
+	color: var(--fg-muted);
+	letter-spacing: 0.02em;
+}
+
+.progress-bar {
+	height: 6px;
+	margin: 0 0.6rem 0.8rem;
+	background: var(--border);
+	border-radius: 99px;
+	overflow: hidden;
+}
+.progress-fill {
+	height: 100%;
+	background: var(--ok);
+	transition: width 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+	.progress-fill {
+		transition: none;
+	}
+}
+
+.side-search {
+	margin: 0 0.6rem 0.6rem;
+}
+.side-search input {
+	width: 100%;
+	font: inherit;
+	font-size: 0.86rem;
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--border);
+	border-radius: 7px;
+	background: var(--bg-elev);
+	color: var(--fg);
+}
+.side-search input:focus {
+	outline: 2px solid var(--accent);
+	outline-offset: -1px;
+}
+
+.sidebar-group-label {
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--fg-muted);
+	padding: 0.5rem 0.6rem 0.3rem;
+}
+
+/* A2.4: resume affordance */
+.resume-link {
+	display: block !important;
+	margin: 0.2rem 0.6rem 0.6rem;
+	padding: 0.5rem 0.7rem !important;
+	border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.resume-link:hover {
+	text-decoration: none;
+	border-color: var(--accent);
+}
+.resume-eyebrow {
+	display: block;
+	font-size: 0.66rem;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--accent);
+	font-weight: 700;
+}
+.resume-title {
+	display: block;
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--fg);
+	margin-top: 0.1rem;
+}
+.sidebar a {
+	display: flex;
+	align-items: baseline;
+	gap: 0.55rem;
+	padding: 0.4rem 0.6rem;
+	border-radius: 7px;
+	color: var(--fg);
+	font-size: 0.92rem;
+	line-height: 1.3;
+}
+.sidebar a:hover {
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	text-decoration: none;
+}
+.sidebar a.active {
+	background: color-mix(in srgb, var(--accent) 18%, transparent);
+	font-weight: 600;
+}
+.sidebar a .num {
+	font-family: var(--font-mono);
+	font-size: 0.74rem;
+	color: var(--fg-muted);
+	min-width: 1.4em;
+}
+.sidebar a.done .num::after {
+	content: ' ✓';
+	color: var(--ok);
+}
+.sidebar a.done .lbl {
+	color: var(--fg-muted);
+}
+
+.theme-toggle {
+	display: flex;
+	gap: 0.3rem;
+	margin: 1rem 0.6rem 0;
+}
+.theme-toggle button {
+	flex: 1;
+	padding: 0.3rem;
+	font-size: 0.78rem;
+	border: 1px solid var(--border);
+	background: var(--bg-elev);
+	color: var(--fg-muted);
+	border-radius: 6px;
+	cursor: pointer;
+}
+.theme-toggle button.active {
+	color: var(--fg);
+	border-color: var(--accent);
+}
+.footer {
+	margin-top: 1rem;
+	padding: 0 0.6rem;
+}
+
+/* ---------- prose ---------- */
+.prose {
+	color: var(--fg);
+}
+.prose h1,
+.lesson-title {
+	font-size: 2rem;
+	line-height: 1.2;
+	margin: 0.2rem 0 0.6rem;
+	letter-spacing: -0.01em;
+}
+.prose h2 {
+	font-size: 1.4rem;
+	margin: 2.4rem 0 0.8rem;
+	padding-bottom: 0.3rem;
+	border-bottom: 1px solid var(--border);
+}
+.prose h3 {
+	font-size: 1.12rem;
+	margin: 1.8rem 0 0.5rem;
+}
+.prose p {
+	margin: 0.8rem 0;
+}
+.prose ul,
+.prose ol {
+	padding-left: 1.4rem;
+}
+.prose li {
+	margin: 0.35rem 0;
+}
+.prose strong {
+	font-weight: 650;
+}
+.kicker {
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--accent);
+	font-weight: 700;
+}
+.lesson-sub,
+.lead {
+	color: var(--fg-muted);
+	font-size: 1.08rem;
+}
+.lead {
+	margin: 0.6rem 0 1.4rem;
+}
+
+/* inline code */
+.prose :not(pre) > code {
+	font-family: var(--font-mono);
+	font-size: 0.86em;
+	background: var(--code-bg);
+	border: 1px solid var(--code-border);
+	padding: 0.1em 0.35em;
+	border-radius: 5px;
+}
+
+/* tables */
+.prose table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1.2rem 0;
+	font-size: 0.92rem;
+}
+.prose th,
+.prose td {
+	border: 1px solid var(--border);
+	padding: 0.5rem 0.7rem;
+	text-align: left;
+	vertical-align: top;
+}
+.prose th {
+	background: var(--code-bg);
+	font-weight: 650;
+}
+
+.prose blockquote {
+	margin: 1rem 0;
+	padding: 0.4rem 1rem;
+	border-left: 3px solid var(--accent);
+	background: color-mix(in srgb, var(--accent) 7%, transparent);
+	color: var(--fg);
+}
+
+/* ---------- code blocks (shiki dual-theme) ---------- */
+.prose pre,
+.compare pre {
+	margin: 0;
+	padding: 0.85rem 1rem;
+	border-radius: 9px;
+	border: 1px solid var(--code-border);
+	background: var(--code-bg) !important;
+	overflow-x: auto;
+	font-size: 0.85rem;
+	line-height: 1.55;
+}
+.prose > pre {
+	margin: 1rem 0;
+}
+.prose pre code,
+.compare pre code {
+	font-family: var(--font-mono);
+	background: none;
+	border: none;
+	padding: 0;
+}
+
+/* shiki: light vars by default, dark vars in dark mode */
+.shiki,
+.shiki span {
+	color: var(--shiki-light);
+	background-color: transparent !important;
+}
+html[data-theme='dark'] .shiki,
+html[data-theme='dark'] .shiki span {
+	color: var(--shiki-dark);
+}
+@media (prefers-color-scheme: dark) {
+	html:not([data-theme='light']) .shiki,
+	html:not([data-theme='light']) .shiki span {
+		color: var(--shiki-dark);
+	}
+}
+
+/* ---------- compare blocks ---------- */
+.compare {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.8rem;
+	margin: 1.2rem 0;
+}
+@media (max-width: 720px) {
+	.compare {
+		grid-template-columns: 1fr;
+	}
+}
+.compare-col {
+	min-width: 0;
+	border: 1px solid var(--code-border);
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--code-bg);
+}
+.compare-col pre {
+	border: none;
+	border-radius: 0;
+}
+.compare-label {
+	font-family: var(--font-mono);
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 0.35rem 0.8rem;
+	border-bottom: 1px solid var(--code-border);
+	color: var(--fg-muted);
+	background: var(--bg-elev);
+}
+.compare-col:first-child .compare-label {
+	color: var(--accent-py-ink);
+}
+.compare-col:last-child .compare-label {
+	color: var(--accent);
+}
+/* E5: changed-line highlight (only inside `:::compare diff`). The .line spans
+   come from shiki; we tint the full row of the lines that differ from the
+   Python column so the eye lands on the delta, not the whole block. */
+.compare-diff .compare-line-changed {
+	display: inline-block;
+	width: 100%;
+	background: color-mix(in srgb, var(--accent) 14%, transparent);
+	box-shadow: inset 3px 0 0 var(--accent);
+}
+/* E3: a runnable TS column tucks the live playground under the static snippet. */
+.compare-col .play-mount.compare-run {
+	margin: 0;
+	border-top: 1px dashed var(--code-border);
+}
+
+/* ---------- quiz ---------- */
+.quiz {
+	margin: 1.4rem 0;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 0.9rem 1.1rem;
+	background: var(--bg-elev);
+}
+.quiz-q p:first-child {
+	margin-top: 0;
+}
+.quiz-q::before {
+	content: 'Quick check';
+	display: inline-block;
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--accent);
+	font-weight: 700;
+	margin-bottom: 0.4rem;
+}
+.quiz-a {
+	margin-top: 0.6rem;
+	border-top: 1px dashed var(--border);
+	padding-top: 0.5rem;
+}
+.quiz-a summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--accent);
+}
+.quiz-a[open] summary {
+	margin-bottom: 0.4rem;
+}
+
+/* ---------- home ---------- */
+.cta-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 1rem;
+	margin: 1.2rem 0 2rem;
+}
+.btn {
+	display: inline-block;
+	padding: 0.55rem 1.1rem;
+	border-radius: 8px;
+	border: 1px solid var(--border);
+	background: var(--bg-elev);
+	color: var(--fg);
+	font: inherit;
+	font-size: 0.95rem;
+	cursor: pointer;
+}
+.btn.primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #fff;
+	font-weight: 600;
+}
+.btn.primary:hover {
+	text-decoration: none;
+	filter: brightness(1.06);
+}
+.roadmap {
+	list-style: none;
+	padding: 0;
+	counter-reset: none;
+}
+.roadmap li {
+	margin: 0;
+}
+.roadmap a {
+	display: flex;
+	gap: 0.9rem;
+	align-items: baseline;
+	padding: 0.6rem 0.7rem;
+	border-radius: 8px;
+	color: var(--fg);
+	border: 1px solid transparent;
+}
+.roadmap a:hover {
+	background: var(--code-bg);
+	text-decoration: none;
+	border-color: var(--border);
+}
+.roadmap .r-num {
+	font-family: var(--font-mono);
+	color: var(--fg-muted);
+	font-size: 0.85rem;
+}
+.roadmap .r-title {
+	font-weight: 600;
+}
+.roadmap li.done .r-title::after {
+	content: ' ✓';
+	color: var(--ok);
+}
+.roadmap .r-sub {
+	display: block;
+	color: var(--fg-muted);
+	font-size: 0.88rem;
+}
+
+/* ---------- lesson footer ---------- */
+.lesson-foot {
+	margin-top: 3rem;
+	padding-top: 1.4rem;
+	border-top: 1px solid var(--border);
+}
+.done-btn.active {
+	background: var(--ok);
+	border-color: var(--ok);
+	color: #fff;
+}
+.nav-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 1.6rem;
+}
+/* A1.3: button-like prev/next targets (Fitts, most-frequent action) */
+.navlink {
+	flex: 1 1 0;
+	max-width: 48%;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	padding: 0.7rem 0.9rem;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--bg-elev);
+	color: var(--fg);
+}
+.navlink:hover {
+	text-decoration: none;
+	border-color: var(--accent);
+	background: var(--code-bg);
+}
+.navlink.next {
+	margin-left: auto;
+	text-align: right;
+	align-items: flex-end;
+}
+.navlink-dir {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--accent);
+	font-weight: 700;
+}
+.navlink-title {
+	font-size: 0.95rem;
+	font-weight: 600;
+}
+.navlink.finale .navlink-dir {
+	color: var(--ok);
+}
+
+/* A1.8: lesson-completion beat */
+.done-beat {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.8rem;
+	margin-top: 1.2rem;
+	padding: 0.9rem 1.1rem;
+	border: 1px solid var(--ok);
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--ok) 9%, transparent);
+	animation: beat-in 0.25s ease-out;
+}
+.done-beat-emoji {
+	font-size: 1.6rem;
+}
+.done-beat-count {
+	display: block;
+	font-size: 0.85rem;
+	color: var(--fg-muted);
+}
+.done-beat-cta {
+	margin-left: auto;
+}
+@keyframes beat-in {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.done-beat {
+		animation: none;
+	}
+}
+
+/* ---------- lesson layout with sticky TOC rail (A2.1) ---------- */
+.lesson-layout {
+	display: block;
+}
+.toc-rail {
+	display: none;
+}
+.toc-inline {
+	margin: 1rem 0 1.6rem;
+	padding: 0.7rem 0.9rem;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--bg-elev);
+}
+/* TOC hide/show controls (only meaningful where the rail shows, ≥1180px). */
+.toc-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	margin-bottom: 0.4rem;
+	padding: 0.2rem 0;
+	font: inherit;
+	font-size: 0.78rem;
+	color: var(--fg-muted);
+	background: none;
+	border: none;
+	cursor: pointer;
+}
+.toc-toggle:hover {
+	color: var(--fg);
+}
+.toc-show-tab {
+	display: none;
+}
+
+/* Wide screens: room for a right-hand sticky rail beside the 760px measure. */
+@media (min-width: 1180px) {
+	.lesson-layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 220px;
+		gap: 2rem;
+		max-width: calc(var(--maxw) + 220px + 2rem);
+		margin: 0 auto;
+	}
+	/* Hidden rail: collapse to a single column capped at the reading measure and
+	   re-center it, so the text pane stays centered instead of stretching to fill
+	   the full (content + rail) band and listing to one side. */
+	.lesson-layout.toc-hidden {
+		grid-template-columns: minmax(0, 1fr);
+		max-width: var(--maxw);
+	}
+	.lesson-layout.toc-hidden .toc-rail {
+		display: none;
+	}
+	.toc-show-tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		position: fixed;
+		top: 1.4rem;
+		right: 1rem;
+		z-index: 40;
+		padding: 0.4rem 0.7rem;
+		font: inherit;
+		font-size: 0.8rem;
+		color: var(--fg);
+		background: var(--bg-elev);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		cursor: pointer;
+	}
+	.toc-show-tab:hover {
+		border-color: var(--accent);
+	}
+	.lesson-page {
+		max-width: none;
+		margin: 0;
+		padding-right: 0;
+	}
+	.toc-rail {
+		display: block;
+		position: sticky;
+		top: 2rem;
+		align-self: start;
+		max-height: calc(100vh - 4rem);
+		overflow-y: auto;
+		padding: 2.4rem 0 0;
+	}
+	.toc-inline {
+		display: none; /* rail replaces the inline TOC on wide screens */
+	}
+}
+
+.muted {
+	color: var(--fg-muted);
+}
+.small {
+	font-size: 0.82rem;
+}
+.md-loading {
+	color: var(--fg-muted);
+	font-size: 0.9rem;
+}
+
+/* ---------- glossary term signifier (A3) ----------
+   A consistent, learnable cue distinct from a normal link: dashed accent
+   underline, never solid. Learn it once, recognize it everywhere. */
+.gloss-term {
+	color: inherit;
+	text-decoration: none;
+	border-bottom: 1.5px dashed color-mix(in srgb, var(--accent) 65%, var(--fg-muted));
+	cursor: help;
+	/* Inline trigger stays in the line box; the ≥44px touch target is enforced on
+	   the bottom-sheet "Read full" button (.gloss-readfull), not the inline word. */
+	padding-bottom: 1px;
+}
+.gloss-term:hover,
+.gloss-term:focus-visible {
+	text-decoration: none;
+	border-bottom-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.gloss-term::after {
+	/* "definition available" affordance */
+	content: '°';
+	font-size: 0.7em;
+	vertical-align: super;
+	color: var(--accent);
+	margin-left: 1px;
+	line-height: 0;
+}
+
+/* ---------- playground hydration skeleton (A1.4) ---------- */
+.play-mount {
+	margin: 1.4rem 0;
+}
+.play-skeleton {
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 0.9rem;
+	background: var(--bg-elev);
+	min-height: 200px; /* reserve height ≈ rendered Playground to avoid CLS */
+}
+.play-skeleton-bar {
+	height: 1.4rem;
+	width: 40%;
+	border-radius: 6px;
+	background: var(--code-bg);
+	margin-bottom: 0.9rem;
+}
+.play-skeleton-lines {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+.play-skeleton-lines span {
+	display: block;
+	height: 0.7rem;
+	border-radius: 4px;
+	background: var(--code-bg);
+}
+.play-skeleton-lines span:nth-child(1) {
+	width: 90%;
+}
+.play-skeleton-lines span:nth-child(2) {
+	width: 75%;
+}
+.play-skeleton-lines span:nth-child(3) {
+	width: 60%;
+}
+.play-skeleton-foot {
+	margin-top: 1rem;
+	color: var(--fg-muted);
+	font-size: 0.85rem;
+}
+.play-skeleton-bar,
+.play-skeleton-lines span {
+	animation: play-pulse 1.4s ease-in-out infinite;
+}
+@keyframes play-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.55;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.play-skeleton-bar,
+	.play-skeleton-lines span {
+		animation: none;
+	}
+}
+.play-error {
+	border: 1px solid var(--danger);
+	border-radius: 12px;
+	padding: 0.9rem 1.1rem;
+	background: color-mix(in srgb, var(--danger) 7%, transparent);
+}
+.play-error p {
+	margin: 0 0 0.5rem;
+	font-weight: 600;
+	color: var(--danger);
+}
+.play-error pre {
+	margin: 0;
+	font-family: var(--font-mono);
+	font-size: 0.8rem;
+	white-space: pre-wrap;
+	color: var(--fg-muted);
+}
+
+/* ---------- E4: control-flow narrowing visualizer (:::narrow) ---------- */
+.narrow {
+	margin: 1.4rem 0;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 0.9rem 1.1rem;
+	background: var(--bg-elev);
+}
+.narrow-start {
+	font-family: var(--font-mono);
+	font-size: 0.85rem;
+	margin-bottom: 0.7rem;
+}
+.narrow-start-label {
+	font-family: var(--font-sans, inherit);
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--fg-muted);
+	margin-right: 0.4rem;
+}
+.narrow-steps {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+.narrow-step {
+	display: grid;
+	grid-template-columns: 1fr auto auto;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.4rem 0.7rem;
+	border: 1px solid var(--code-border);
+	border-left: 3px solid var(--accent);
+	border-radius: 8px;
+	background: var(--code-bg);
+}
+.narrow-guard {
+	font-size: 0.82rem;
+	color: var(--fg);
+}
+.narrow-arrow {
+	color: var(--fg-muted);
+}
+.narrow-type {
+	font-size: 0.82rem;
+	color: var(--accent);
+	font-weight: 600;
+}
+.narrow-caption {
+	margin: 0.7rem 0 0;
+	font-size: 0.85rem;
+	color: var(--fg-muted);
+}
+@media (max-width: 560px) {
+	.narrow-step {
+		grid-template-columns: 1fr auto;
+	}
+	.narrow-arrow {
+		display: none;
+	}
+}

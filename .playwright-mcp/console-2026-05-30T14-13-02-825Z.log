@@ -1,0 +1,7 @@
+[ 2262710ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4173/lesson/js-reality-gotchas/__data.json?x-sveltekit-invalidated=01:0
+[ 2262711ms] [ERROR] TypeError: Failed to fetch
+    at window.fetch (http://localhost:4173/_app/immutable/chunks/BnV-XezT.js:1:1957)
+    at Qt (http://localhost:4173/_app/immutable/chunks/BnV-XezT.js:3:17948)
+    at Rt (http://localhost:4173/_app/immutable/chunks/BnV-XezT.js:3:6638)
+    at Ot (http://localhost:4173/_app/immutable/chunks/BnV-XezT.js:3:2494)
+    at a (http://localhost:4173/_app/immutable/chunks/BnV-XezT.js:3:12995) @ http://localhost:4173/_app/immutable/entry/app.TXKYs8rj.js:1

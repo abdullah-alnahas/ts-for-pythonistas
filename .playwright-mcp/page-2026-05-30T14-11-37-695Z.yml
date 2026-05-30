@@ -1,0 +1,400 @@
+- generic [ref=e2]:
+  - link "Skip to content" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - link "Py → TS" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: Py
+        - generic [ref=e8]: →
+        - generic [ref=e9]: TS
+      - button "Open navigation" [ref=e10] [cursor=pointer]: ☰ Menu
+    - navigation "Primary" [ref=e11]:
+      - link "Py → TS TypeScript for Pythonistas" [ref=e12] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e13]: Py
+        - generic [ref=e14]: →
+        - generic [ref=e15]: TS
+        - generic [ref=e16]: TypeScript for Pythonistas
+      - progressbar "Lessons completed" [ref=e17]
+      - searchbox "Search lessons" [ref=e19]
+      - generic [ref=e20]:
+        - generic [ref=e21]: Tools
+        - link "▶ Playground" [ref=e22] [cursor=pointer]:
+          - /url: /playground
+          - generic [ref=e23]: ▶
+          - generic [ref=e24]: Playground
+        - link "§ Glossary" [ref=e25] [cursor=pointer]:
+          - /url: /glossary
+          - generic [ref=e26]: §
+          - generic [ref=e27]: Glossary
+        - link "⌕ Search" [ref=e28] [cursor=pointer]:
+          - /url: /search
+          - generic [ref=e29]: ⌕
+          - generic [ref=e30]: Search
+      - generic [ref=e31]:
+        - generic [ref=e32]: Foundations
+        - link "01 The setup story" [ref=e33] [cursor=pointer]:
+          - /url: /lesson/setup-story
+          - generic [ref=e34]: "01"
+          - generic [ref=e35]: The setup story
+        - link "02 Primitives & variables" [ref=e36] [cursor=pointer]:
+          - /url: /lesson/primitives-variables
+          - generic [ref=e37]: "02"
+          - generic [ref=e38]: Primitives & variables
+        - link "03 Structural typing" [ref=e39] [cursor=pointer]:
+          - /url: /lesson/structural-typing
+          - generic [ref=e40]: "03"
+          - generic [ref=e41]: Structural typing
+        - link "04 interface vs type" [ref=e42] [cursor=pointer]:
+          - /url: /lesson/interface-vs-type
+          - generic [ref=e43]: "04"
+          - generic [ref=e44]: interface vs type
+      - generic [ref=e45]:
+        - generic [ref=e46]: The Type System
+        - link "05 Union & intersection types" [ref=e47] [cursor=pointer]:
+          - /url: /lesson/unions-intersections
+          - generic [ref=e48]: "05"
+          - generic [ref=e49]: Union & intersection types
+        - link "06 null vs undefined" [ref=e50] [cursor=pointer]:
+          - /url: /lesson/null-undefined
+          - generic [ref=e51]: "06"
+          - generic [ref=e52]: null vs undefined
+        - link "07 Generics" [ref=e53] [cursor=pointer]:
+          - /url: /lesson/generics
+          - generic [ref=e54]: "07"
+          - generic [ref=e55]: Generics
+        - link "08 Narrowing & type guards" [ref=e56] [cursor=pointer]:
+          - /url: /lesson/narrowing-guards
+          - generic [ref=e57]: "08"
+          - generic [ref=e58]: Narrowing & type guards
+      - generic [ref=e59]:
+        - generic [ref=e60]: Functions & Classes
+        - link "09 Functions, deeply" [ref=e61] [cursor=pointer]:
+          - /url: /lesson/functions
+          - generic [ref=e62]: "09"
+          - generic [ref=e63]: Functions, deeply
+        - link "10 Classes" [ref=e64] [cursor=pointer]:
+          - /url: /lesson/classes
+          - generic [ref=e65]: "10"
+          - generic [ref=e66]: Classes
+      - generic [ref=e67]:
+        - generic [ref=e68]: Advanced & JS Reality
+        - link "11 Advanced & utility types" [ref=e69] [cursor=pointer]:
+          - /url: /lesson/utility-types
+          - generic [ref=e70]: "11"
+          - generic [ref=e71]: Advanced & utility types
+        - link "12 The JS reality layer & gotchas" [ref=e72] [cursor=pointer]:
+          - /url: /lesson/js-reality-gotchas
+          - generic [ref=e73]: "12"
+          - generic [ref=e74]: The JS reality layer & gotchas
+      - group "Theme" [ref=e75]:
+        - button "Auto" [pressed] [ref=e76] [cursor=pointer]
+        - button "Light" [ref=e77] [cursor=pointer]
+        - button "Dark" [ref=e78] [cursor=pointer]
+      - paragraph [ref=e80]: Built for Abdullah · 7+ yrs Python → TypeScript.
+  - main [ref=e85]:
+    - generic [ref=e86]: Lesson 01
+    - heading "The setup story" [level=1] [ref=e87]
+    - paragraph [ref=e88]: Why TS exists, and the compile step that has no Python equivalent
+    - navigation "On this page" [ref=e90]:
+      - group [ref=e91]:
+        - generic "On this page" [ref=e92]
+        - list [ref=e93]:
+          - listitem [ref=e94]:
+            - link "Something happens in between" [ref=e95] [cursor=pointer]:
+              - /url: "#something-happens-in-between"
+          - listitem [ref=e96]:
+            - link "The one-sentence model" [ref=e97] [cursor=pointer]:
+              - /url: "#the-one-sentence-model"
+          - listitem [ref=e98]:
+            - link "The transpile step" [ref=e99] [cursor=pointer]:
+              - /url: "#the-transpile-step"
+          - listitem [ref=e100]:
+            - 'link "Consequence: no runtime type info" [ref=e101] [cursor=pointer]':
+              - /url: "#consequence-no-runtime-type-info"
+          - listitem [ref=e102]:
+            - link "\"Checked, then deleted\" — the gotcha" [ref=e103] [cursor=pointer]:
+              - /url: "#checked-then-deleted-the-gotcha"
+          - listitem [ref=e104]:
+            - link "Minimum setup to follow along" [ref=e105] [cursor=pointer]:
+              - /url: "#minimum-setup-to-follow-along"
+          - listitem [ref=e106]:
+            - link "The one config knob that matters now" [ref=e107] [cursor=pointer]:
+              - /url: "#the-one-config-knob-that-matters-now"
+          - listitem [ref=e108]:
+            - link "Recap" [ref=e109] [cursor=pointer]:
+              - /url: "#recap"
+    - generic [ref=e110]:
+      - heading "Something happens in between" [level=2] [ref=e111]
+      - paragraph [ref=e112]:
+        - text: Your
+        - code [ref=e113]: .py
+        - text: "file runs as-is:"
+        - code [ref=e114]: python greet.py
+        - text: and you're done. Your
+        - code [ref=e115]: .ts
+        - text: file cannot — no runtime executes TypeScript directly. Something has to happen between the file you write and the program that runs. That something is the whole reason TS exists, and it's the one piece with no Python equivalent.
+      - heading "The one-sentence model" [level=2] [ref=e116]
+      - paragraph [ref=e117]:
+        - strong [ref=e118]: TypeScript = JavaScript + a static type layer that is checked, then deleted.
+      - paragraph [ref=e119]:
+        - text: The closest Python analog is
+        - strong [ref=e120]: mypy
+        - text: — but the relationship is inverted from what you're used to.
+      - table [ref=e121]:
+        - rowgroup [ref=e122]:
+          - row "Python + mypy TypeScript" [ref=e123]:
+            - columnheader [ref=e124]
+            - columnheader "Python + mypy" [ref=e125]
+            - columnheader "TypeScript" [ref=e126]
+        - rowgroup [ref=e127]:
+          - row "Types are… an optional bolt-on (pip install mypy) the language itself" [ref=e128]:
+            - cell "Types are…" [ref=e129]
+            - cell "an optional bolt-on (pip install mypy)" [ref=e130]:
+              - text: an optional bolt-on (
+              - code [ref=e131]: pip install mypy
+              - text: )
+            - cell "the language itself" [ref=e132]
+          - row "Who runs your code python runs .py directly the browser/Node run JS, not TS — you compile first" [ref=e133]:
+            - cell "Who runs your code" [ref=e134]
+            - cell "python runs .py directly" [ref=e135]:
+              - code [ref=e136]: python
+              - text: runs
+              - code [ref=e137]: .py
+              - text: directly
+            - cell "the browser/Node run JS, not TS — you compile first" [ref=e138]:
+              - text: the browser/Node run
+              - strong [ref=e139]: JS
+              - text: ", not TS — you compile first"
+          - row "Types at runtime partly present (isinstance, __annotations__) gone entirely" [ref=e140]:
+            - cell "Types at runtime" [ref=e141]
+            - cell "partly present (isinstance, __annotations__)" [ref=e142]:
+              - text: partly present (
+              - code [ref=e143]: isinstance
+              - text: ","
+              - code [ref=e144]: __annotations__
+              - text: )
+            - cell "gone entirely" [ref=e145]:
+              - strong [ref=e146]: gone entirely
+          - row "A bad type a warning; code still runs a compile error — but the JS can still run" [ref=e147]:
+            - cell "A bad type" [ref=e148]
+            - cell "a warning; code still runs" [ref=e149]
+            - cell "a compile error — but the JS can still run" [ref=e150]
+      - heading "The transpile step" [level=2] [ref=e151]
+      - paragraph [ref=e152]:
+        - text: In Python you write
+        - code [ref=e153]: .py
+        - text: and run it. In TS you write
+        - code [ref=e154]: .ts
+        - text: ","
+        - strong [ref=e155]:
+          - code [ref=e156]: tsc
+          - text: compiles it to
+          - code [ref=e157]: .js
+        - text: ", and you run the"
+        - code [ref=e158]: .js
+        - text: .
+      - generic [ref=e159]:
+        - generic [ref=e160]:
+          - generic [ref=e161]: Python
+          - code [ref=e163]:
+            - generic [ref=e164]: "# greet.py — you run this directly"
+            - generic [ref=e165]: "greeting: str = \"hi\""
+            - generic [ref=e166]: print(greeting.upper())
+        - generic [ref=e167]:
+          - generic [ref=e168]: TypeScript
+          - code [ref=e170]:
+            - generic [ref=e171]: // greet.ts — tsc compiles this to greet.js first
+            - generic [ref=e172]: "const greeting: string = \"hi\";"
+            - generic [ref=e173]: console.log(greeting.toUpperCase());
+      - generic [ref=e176]:
+        - generic [ref=e177]:
+          - text: Quick check
+          - paragraph [ref=e178]:
+            - text: You compile the
+            - code [ref=e179]: greet.ts
+            - text: above with
+            - code [ref=e180]: tsc
+            - text: . Before looking — what does the emitted
+            - code [ref=e181]: greet.js
+            - text: contain? Specifically, what happens to
+            - code [ref=e182]: ": string"
+            - text: "?"
+        - group [ref=e183]:
+          - generic "Show answer" [ref=e184] [cursor=pointer]
+      - paragraph [ref=e185]: So one annotation vanished. The same fate awaits every type in the file. Before you read the diagram below, predict where in the pipeline the types still exist — and where they're already gone.
+      - paragraph [ref=e186]: "The full erase pipeline, end to end:"
+      - code [ref=e188]:
+        - generic [ref=e189]: greet.ts ──tsc──▶ type-check ──▶ strip all types ──▶ greet.js ──node/browser──▶ runs
+        - generic [ref=e190]: (types here) (errors here) (types deleted) (plain JS) (no types here)
+      - paragraph [ref=e191]:
+        - text: Everything left of
+        - code [ref=e192]: greet.js
+        - text: is compile time; everything right of it is runtime. Types live only on the left.
+      - 'heading "Consequence: no runtime type info" [level=2] [ref=e193]'
+      - paragraph [ref=e194]: In Python you lean on runtime type identity all the time. In TS you cannot check against a type that doesn't exist at runtime.
+      - generic [ref=e195]:
+        - generic [ref=e196]:
+          - generic [ref=e197]: Python
+          - code [ref=e199]:
+            - generic [ref=e200]: "def handle(x):"
+            - generic [ref=e201]: "if isinstance(x, str): # real runtime check"
+            - generic [ref=e202]: return x.upper()
+        - generic [ref=e203]:
+          - generic [ref=e204]: TypeScript
+          - code [ref=e206]:
+            - generic [ref=e207]: "function handle(x: unknown): string | undefined {"
+            - generic [ref=e208]: "if (typeof x === \"string\") { // typeof: a real JS operator"
+            - generic [ref=e209]: return x.toUpperCase();
+            - generic [ref=e210]: "}"
+            - generic [ref=e211]: "}"
+      - paragraph [ref=e212]:
+        - text: You can check JS-level things (
+        - code [ref=e213]: typeof
+        - text: ","
+        - code [ref=e214]: instanceof
+        - text: against real classes), but
+        - strong [ref=e215]: never
+        - text: an
+        - code [ref=e216]: interface
+        - text: or
+        - code [ref=e217]: type
+        - text: "— those have no runtime existence. Burn this in:"
+        - emphasis [ref=e218]: types are a compile-time fiction; runtime is plain JS.
+      - heading "\"Checked, then deleted\" — the gotcha" [level=2] [ref=e219]
+      - paragraph [ref=e220]:
+        - text: Because checking and running are separate steps,
+        - code [ref=e221]: tsc
+        - text: will (by default)
+        - strong [ref=e222]: still emit JS even when type-checking fails
+        - text: . The error is advisory unless your build is wired to block on it.
+      - paragraph [ref=e223]:
+        - text: Run the block below. You'll see the type error reported
+        - emphasis [ref=e224]: and
+        - text: the program execute anyway — the error is real, but it doesn't stop the run. Then change
+        - code [ref=e225]: "\"not a number\""
+        - text: to a real number and run again to clear it.
+      - generic [ref=e233]: Loading interactive playground…
+      - paragraph [ref=e234]:
+        - code [ref=e235]: tsc
+        - text: writes
+        - code [ref=e236]: const n = "not a number";
+        - text: to the
+        - code [ref=e237]: .js
+        - text: ", which runs fine. This will feel familiar: mypy complaining never stops"
+        - code [ref=e238]: python
+        - text: from running either.
+      - heading "Minimum setup to follow along" [level=2] [ref=e239]
+      - paragraph [ref=e240]: "You don't need a build pipeline to learn. Easiest first:"
+      - code [ref=e242]:
+        - generic [ref=e243]: "# 1. Browser, zero install — best for this course."
+        - generic [ref=e244]: "# https://www.typescriptlang.org/play (watch the emitted JS live)"
+        - generic [ref=e245]: "# 2. Run a .ts file directly:"
+        - generic [ref=e246]: "bun run greet.ts # bun executes TS natively, no compile step you see"
+        - generic [ref=e247]: "# 3. The real compiler:"
+        - generic [ref=e248]: npx tsc greet.ts && node greet.js
+      - blockquote [ref=e249]:
+        - paragraph [ref=e250]:
+          - text: Use the
+          - strong [ref=e251]: Playground
+          - text: for these lessons. Seeing types erased into JS reinforces everything above.
+      - heading "The one config knob that matters now" [level=2] [ref=e252]
+      - paragraph [ref=e253]:
+        - text: A project's TS behavior lives in
+        - code [ref=e254]: tsconfig.json
+        - text: (think
+        - code [ref=e255]: pyproject.toml [tool.mypy]
+        - text: "). One setting dominates:"
+      - code [ref=e257]:
+        - generic [ref=e258]: "{"
+        - generic [ref=e259]: "\"compilerOptions\": {"
+        - generic [ref=e260]: "\"strict\": true"
+        - generic [ref=e261]: "}"
+        - generic [ref=e262]: "}"
+      - paragraph [ref=e263]:
+        - code [ref=e264]: "strict: true"
+        - text: turns on the checks that make TS actually useful — especially null safety (Lesson 06). Mentally it's mypy's
+        - code [ref=e265]: "--strict"
+        - text: .
+        - strong [ref=e266]: Every example in this course assumes it's on.
+      - generic [ref=e267]:
+        - generic [ref=e268]:
+          - text: Quick check
+          - paragraph [ref=e269]:
+            - text: "Quick check:"
+            - code [ref=e270]: tsc
+            - text: reports a type error in your file. Does it still produce a
+            - code [ref=e271]: .js
+            - text: "?"
+        - group [ref=e272]:
+          - generic "Show answer" [ref=e273] [cursor=pointer]
+      - heading "Recap" [level=2] [ref=e274]
+      - list [ref=e275]:
+        - listitem [ref=e276]: TS = JS + erasable types. Runtime is pure JS.
+        - listitem [ref=e277]:
+          - text: The compile step (
+          - code [ref=e278]: tsc
+          - text: ) is mandatory and new vs Python.
+        - listitem [ref=e279]:
+          - text: "No"
+          - code [ref=e280]: isinstance
+          - text: "-on-interfaces; use"
+          - code [ref=e281]: typeof
+          - text: /
+          - code [ref=e282]: instanceof
+          - text: on real values.
+        - listitem [ref=e283]:
+          - text: Type errors don't block emit by default (like mypy not blocking
+          - code [ref=e284]: python
+          - text: ).
+        - listitem [ref=e285]:
+          - text: Learn in the Playground; always
+          - code [ref=e286]: "strict: true"
+          - text: .
+      - generic [ref=e287]:
+        - generic [ref=e288]:
+          - text: Quick check
+          - paragraph [ref=e289]: Why can't this work in TypeScript?
+          - code [ref=e291]:
+            - generic [ref=e292]: "interface User { name: string }"
+            - generic [ref=e293]: "function f(x: unknown) {"
+            - generic [ref=e294]: if (x instanceof User) console.log("a user!");
+            - generic [ref=e295]: "}"
+        - group [ref=e296]:
+          - generic "Show answer" [ref=e297] [cursor=pointer]
+      - paragraph [ref=e298]:
+        - text: "If erasure is so total, one question should nag: what does the compiler still"
+        - emphasis [ref=e299]: know
+        - text: about a value once the annotations are gone? More than you'd guess — and Lesson 02 starts with where that knowledge comes from, in how
+        - code [ref=e300]: const
+        - text: and
+        - code [ref=e301]: let
+        - text: infer different types from the very same literal.
+    - heading "Practice on LeetCode" [level=2] [ref=e302]
+    - paragraph [ref=e303]: Solve these in TypeScript to drill the lesson on real problems.
+    - list [ref=e304]:
+      - listitem [ref=e305]:
+        - link "1. Two Sum Easy" [ref=e306] [cursor=pointer]:
+          - /url: https://leetcode.com/problems/two-sum/
+          - generic [ref=e307]: "1."
+          - generic [ref=e308]: Two Sum
+          - generic [ref=e309]: Easy
+        - paragraph [ref=e310]: Submit your first TypeScript solution — LeetCode compiles it with tsc, exactly the erase-then-run pipeline from this lesson. (A classic algorithm problem; here it just gets you through the TS submission loop.)
+    - heading "Exercises" [level=2] [ref=e311]
+    - paragraph [ref=e312]:
+      - text: Edit the code, then
+      - strong [ref=e313]: Run tests
+      - text: . They execute in your browser against the real TypeScript compiler — type errors and test failures both show up.
+    - generic [ref=e314]:
+      - paragraph [ref=e315]: "Because TS types are *erased*, you can only inspect values at runtime with real JS operators. Implement `describe(x: unknown)` that returns `\"number\"`, `\"string\"`, or `\"other\"` using `typeof` — NOT a type annotation. Open in the Playground to see there is no type info left at runtime to lean on."
+      - textbox "Code editor" [ref=e316]: "function describe(x: unknown): \"number\" | \"string\" | \"other\" { // TODO: use typeof — types are gone at runtime return \"other\"; }"
+      - generic [ref=e317]:
+        - button "Run tests" [ref=e318] [cursor=pointer]
+        - button "Reset" [ref=e319] [cursor=pointer]
+    - generic [ref=e320]:
+      - button "Mark lesson done" [ref=e321] [cursor=pointer]
+      - link "Next → Primitives & variables" [ref=e323] [cursor=pointer]:
+        - /url: /lesson/primitives-variables
+        - generic [ref=e324]: Next →
+        - generic [ref=e325]: Primitives & variables
