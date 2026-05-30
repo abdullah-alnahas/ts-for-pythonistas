@@ -4,6 +4,8 @@ A self-contained course app that teaches TypeScript by mapping every feature to 
 Python equivalent. Built for someone fluent in Python — leads with contrasts, skips
 the basics.
 
+**Live: https://abdullah-alnahas.github.io/ts-for-pythonistas/**
+
 **Stack:** Bun · SvelteKit · Svelte 5 (runes) · `adapter-static` · `marked` + `shiki`.
 
 ## Run it

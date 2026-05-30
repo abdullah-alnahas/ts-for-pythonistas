@@ -74,5 +74,10 @@
 			<a href="{base}/playground">Playground</a>
 			to run it and read its type diagnostics live — the real compiler, in your browser.
 		</p>
+		<p class="muted small">
+			Live at
+			<a href="https://abdullah-alnahas.github.io/ts-for-pythonistas/">abdullah-alnahas.github.io/ts-for-pythonistas</a>
+			— share it with anyone moving from Python to TypeScript.
+		</p>
 	</main>
 </div>
