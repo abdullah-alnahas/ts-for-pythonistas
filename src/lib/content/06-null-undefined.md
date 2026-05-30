@@ -1,13 +1,13 @@
 ---
 title: null vs undefined
-subtitle: Two empty values instead of one None, plus strict null safety
+subtitle: Two empty values where Python has one None, and the strict null safety that tracks them
 ---
 
 ## The two unions you write most
 
-Lesson 05 introduced `A | B` as the way to say a value is one of several shapes, and discriminated unions as the way to model a value that changes shape over its lifetime. The two unions you will write more than any other are smaller than those examples and easy to overlook: `T | null` and `T | undefined`. They are how TypeScript models absence, and under `strict` they are not optional decorations — the compiler forces them on you wherever a value might not be there.
+Lesson 05 introduced `A | B` as the way to say a value is one of several shapes, and discriminated unions as the way to model a value that changes shape over its lifetime. The two unions you'll write more than any other are smaller than those examples and easy to overlook: `T | null` and `T | undefined`. They're how TypeScript models absence, and under `strict` they aren't optional decorations — the compiler forces them on you wherever a value might not be there.
 
-There is a wrinkle Python doesn't prepare you for. Python has exactly one empty value, `None`, and you reach for it whether something was never set, was deliberately cleared, or is missing from a dict. JavaScript has two, `null` and `undefined`, and TypeScript faithfully models both because the runtime distinguishes them. Most early confusion about TypeScript's null handling is really confusion about which of the two you have and where each comes from, so that's where to start.
+There's a wrinkle Python doesn't prepare you for. Python has exactly one empty value, `None`, and you reach for it whether something was never set, was deliberately cleared, or is missing from a dict. JavaScript has two, `null` and `undefined`, and TypeScript models both because the runtime distinguishes them. Most early confusion about TypeScript's null handling is really confusion about which of the two you have and where each comes from, so that's where to start.
 
 ## Where each empty comes from
 
@@ -23,7 +23,7 @@ const b = d["missing"];                   // key not present
 function f(x: number) { return x; }       // f() called with no args, elsewhere
 ```
 :::answer
-`a` is `undefined` — a declared-but-unassigned binding holds `undefined`, never `null`. `b` is `undefined` — reading a missing property returns `undefined` rather than raising the way a Python `dict` raises `KeyError` (the `[]` access here behaves like `dict.get`, not `dict[]`). Calling `f()` with no argument binds the parameter to `undefined`. None of these is an error at runtime, and none is `null`. The pattern: JavaScript reaches for `undefined` whenever something is absent — unassigned variable, missing property, omitted argument, a function with no `return`. You get `null` only when code explicitly writes it.
+`a` is `undefined` — a declared-but-unassigned binding holds `undefined`, never `null`. `b` is `undefined` — reading a missing property returns `undefined` rather than raising the way a Python `dict` raises `KeyError` (the `[]` access here behaves like `dict.get`, not `dict[]`). Calling `f()` with no argument binds the parameter to `undefined`. None of these is a runtime error, and none is `null`. The pattern: JavaScript reaches for `undefined` whenever something is absent — unassigned variable, missing property, omitted argument, a function with no `return`. You get `null` only when code explicitly writes it.
 :::
 
 So the convention, which the whole ecosystem follows, is mechanical rather than stylistic:
@@ -55,14 +55,14 @@ The analogy to `None` is close enough to be useful and wrong in one place worth 
 
 ## strictNullChecks: every type is non-null by default
 
-This is the payoff Lesson 01 was pointing at when it insisted on `strict: true`. The flag that matters here is `strictNullChecks`, which `strict` turns on. With it, `null` and `undefined` are removed from the domain of every type unless you put them back. `string` means a string and nothing else; to allow absence you widen the type into a union yourself.
+This is the payoff Lesson 01 was pointing at when it insisted on `strict: true`. The flag in play is `strictNullChecks`, which `strict` turns on. With it, `null` and `undefined` leave the domain of every type unless you put them back. `string` means a string and nothing else; to allow absence you widen the type into a union yourself.
 
 ```typescript
 let title: string = null;          // error TS2322: Type 'null' is not assignable to type 'string'
 let title2: string | null = null;  // ok — you declared it nullable
 ```
 
-The mechanism is worth stating exactly, because it inverts the Python default you carry in. In Python, `def find(id: int) -> User` will happily `return None` at runtime — the annotation is a no-op, so the code runs regardless. Whether anything complains is up to [[mypy]], and even there the check is comparatively recent: `strict_optional` is on by default in current [[mypy]], but for years it was opt-in, and the language itself still treats `None` as assignable to anything. TypeScript leaves no such gap: non-null is the default and optionality is the thing you opt into. A function annotated `: User` cannot return `undefined`; if it might, its return type is `User | undefined`, and the compiler — not a separate linter you may or may not run — flags every path that violates it until you say so.
+This inverts the Python default you carry in. In Python, `def find(id: int) -> User` will happily `return None` at runtime — the annotation is a no-op. Whether anything complains is up to [[mypy]], and even there the check is recent: `strict_optional` is on by default in current [[mypy]], but for years it was opt-in, and the language itself still treats `None` as assignable to anything. TypeScript leaves no such gap: non-null is the default and optionality is what you opt into. A function annotated `: User` cannot return `undefined`; if it might, its return type is `User | undefined`, and the compiler — not a separate linter you may or may not run — flags every path that violates it until you say so.
 
 ```typescript
 function find(id: number): User | undefined {
@@ -70,7 +70,7 @@ function find(id: number): User | undefined {
 }
 ```
 
-The part that makes this more than bookkeeping is that the compiler then tracks that nullability through every path the value takes, and refuses to let you use it as a `User` until you've ruled out the empty case.
+The compiler then tracks that nullability through every path the value takes, and refuses to let you use it as a `User` until you've ruled out the empty case.
 
 ```typescript
 function greet(u: User | undefined): void {
@@ -81,13 +81,13 @@ function greet(u: User | undefined): void {
 }
 ```
 
-Inside `if (u)`, `u` is no longer `User | undefined`; the compiler has removed `undefined` from its type for the rest of the block, because reaching that line proves `u` was truthy. That move — shrinking a type as control flow proves things about it — is *narrowing*, and it's the engine behind every safe null access you'll write. It runs much deeper than one `if`, which is the whole of Lesson 08; here it's enough to see that the guard is what converts a `possibly undefined` value into a usable one.
+Inside `if (u)`, `u` is no longer `User | undefined`; the compiler has removed `undefined` from its type for the rest of the block, because reaching that line proves `u` was truthy. Shrinking a type as control flow proves things about it is [[narrowing]], and it's the engine behind every safe null access you'll write. It runs far deeper than one `if` — that's the whole of Lesson 08 — but here it's enough to see that the guard converts a `possibly undefined` value into a usable one.
 
-This is the type-level cure for the error you've spent years pattern-matching against: `AttributeError: 'NoneType' object has no attribute ...`. The TypeScript equivalent simply can't reach runtime, because the access doesn't compile until you've handled the empty case.
+This is the type-level cure for the error you've spent years pattern-matching against: `AttributeError: 'NoneType' object has no attribute ...`. The TypeScript equivalent can't reach runtime — the access doesn't compile until you've handled the empty case.
 
 ## `?` — optional, and how it differs from `| undefined`
 
-You'll mark most absence with `?`, on properties and on parameters. It reads as "this might not be here," and it's nearly shorthand for `| undefined` — but the gap between the two is real, and conflating them is a common source of confusing errors.
+You'll mark most absence with `?`, on properties and on parameters. It reads as "this might not be here," and it's nearly shorthand for `| undefined` — but the gap between the two is real, and conflating them produces errors that read as nonsense until you see the distinction.
 
 :::compare
 ```python
@@ -132,7 +132,7 @@ p2(undefined);   // ok — you must pass something, even if it's undefined
 
 Python's `Optional[X]` is plainly `X | None` — a statement about the *value*, never about whether the key or argument is present. For parameters, `title: str | None = None` couples the optional value to a default, so omitting the argument and passing `None` are the same call. TypeScript separates those: `?` governs presence, the union governs value, and a default is a third, independent thing. The closest Python analogue to "the key may be absent" is `TypedDict` with `total=False`, and even that doesn't generalize to parameters the way `?` does.
 
-One nuance for completeness, because a careful reader will hit it. Whether `nickname: undefined` (key present, value `undefined`) is interchangeable with omitting the key depends on the `exactOptionalPropertyTypes` flag. It's off in this course's default config and in most projects, so `?` is treated as exactly `| undefined` and supplying `undefined` is allowed. Turn it on and `?` means strictly "absent," distinct from "present and `undefined`" — useful when you care about the difference between a field being unset and being cleared.
+One nuance you'll eventually hit: whether `nickname: undefined` (key present, value `undefined`) is interchangeable with omitting the key depends on the `exactOptionalPropertyTypes` flag. It's off in this course's default config and in most projects, so `?` is treated as exactly `| undefined` and supplying `undefined` is allowed. Turn it on and `?` means strictly "absent," distinct from "present and `undefined`" — useful when you care about the difference between a field being unset and being cleared.
 
 :::quiz
 Recall Lesson 03's "has at least" rule. Given `interface User { name: string; nickname?: string }`, is `const u: User = { name: "Ada" }` valid? What about `{ name: "Ada", nickname: undefined }`?
@@ -230,7 +230,7 @@ The honest Python analogue is `# type: ignore` on the line, or a bare `cast(User
 
 ## `void` is not `undefined`
 
-A last distinction that trips people because it looks like a synonym. A return type of `void` does not mean "returns `undefined`" — it means "the caller will ignore the return value." The two differ in one direction: a function typed `() => void` is allowed to return an actual value, and that value is simply discarded by anyone using the type.
+One last distinction, because `void` looks like a synonym for `undefined` and isn't. A return type of `void` doesn't mean "returns `undefined`" — it means "the caller will ignore the return value." The two differ in one direction: a function typed `() => void` is allowed to return an actual value, and that value is simply discarded by anyone using the type.
 
 ```typescript
 const nums = [1, 2, 3];

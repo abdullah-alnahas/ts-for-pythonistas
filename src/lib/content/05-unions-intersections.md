@@ -28,7 +28,7 @@ function parse(x: string | number): number {
 ```
 :::
 
-The mechanical difference is small: `isinstance` interrogates a real runtime class, while `typeof` is a JavaScript operator inspecting a JavaScript value — the distinction from Lesson 01, where TypeScript's types are gone by runtime and only the JS operators survive. The larger difference is cultural. In typed Python, unions show up mostly at function boundaries. In TypeScript they are load-bearing everywhere: return types, component props, configuration objects, the state of a request. You will reach for `|` far more often than `Union[...]` ever earned its keep in your Python, and the reason is the next operator and the pattern it unlocks.
+The mechanical difference is small: `isinstance` interrogates a real runtime class, while `typeof` is a JavaScript operator inspecting a JavaScript value — the Lesson 01 distinction, that after [[erasure|type-erasure]] only the JS operators survive. The larger difference is cultural. In typed Python, unions show up mostly at function boundaries. In TypeScript they are load-bearing everywhere: return types, component props, configuration objects, the state of a request. You will reach for `|` far more often than `Union[...]` ever earned its keep in your Python, and the reason is the next operator and the pattern it unlocks.
 
 The most common union isn't over classes at all — it's over literal types, the feature from Lesson 02:
 
@@ -38,7 +38,7 @@ type Dice = 1 | 2 | 3 | 4 | 5 | 6;
 type Theme = "light" | "dark" | "auto";
 ```
 
-This is `Literal["up", "down", ...]` from Python's `typing`, but where `Literal` is a niche tool you reach for occasionally, literal unions are the idiomatic stand-in for an enum. A function typed `(t: Theme) => void` rejects `"Light"` and `"system"` at compile time, and your editor autocompletes the three legal strings. No enum class, no runtime object — the union is [[erased|type-erasure]] like everything else, and the checking happened before it vanished.
+This is `Literal["up", "down", ...]` from Python's `typing`, but where `Literal` is a niche tool, literal unions are the idiomatic stand-in for an enum. A function typed `(t: Theme) => void` rejects `"Light"` and `"system"` at compile time, and your editor autocompletes the three legal strings. No enum class, no runtime object — the union is [[erased|type-erasure]] like everything else; the check ran at compile time, before it vanished.
 
 A union also tells you what you *cannot* do. Given `x: string | number`, the only members you may touch without further work are the ones both halves share. `.toUpperCase()` is a `string` method, so the compiler rejects it on the bare union; you have to narrow to `string` first, which is what the `typeof` check above does. That restriction is the whole point — the union is honest that it doesn't yet know which type it holds — and following it through every branch of your code is the subject of Lesson 08.
 
@@ -91,7 +91,7 @@ const oops: Both = { a: 1 };
 The reading trips people because `&` *sounds* like "the overlap, therefore less." It is an overlap — but of the *values*, not the *fields*. A value is in `A & B` only if it qualifies as an `A` and also as an `B`, and qualifying as both means carrying both sets of members. So intersecting object types unions their field requirements (you need them all), while, as the next section shows, `|` is the operator that leaves you with *less* you can rely on. The set-theory and the field-counting point in opposite directions, which is the entire source of the confusion.
 :::
 
-So the rule for objects is the inverse of how the operators read: `&` is the union of the *fields* (you must provide all of them), and `|` is the union of the *values* (you hold one, and don't statically know which, so you can rely only on what's common). It's worth running both directions until the asymmetry feels natural rather than memorized:
+So the rule for objects is the inverse of how the operators read: `&` is the union of the *fields* (you must provide all of them), and `|` is the union of the *values* (you hold one, statically unknown which, so you can rely only on what's common). Run both directions until the asymmetry stops surprising you:
 
 :::play
 ```typescript
@@ -124,7 +124,7 @@ type X = string & number;
 - ( ) `string`, because the left operand wins.
 - (x) `never` — the empty type, because no value can satisfy both.
 :::answer
-**`never`.** The declaration is legal; the resulting type is just uninhabited. `&` keeps the values common to both operands, and no single value is simultaneously a `string` and a `number`, so the set is empty — and TypeScript's name for "a type with no values" is `never`. This is the same rule as `A & B` on objects, not a special case: there it intersected two sets that overlap, here it intersects two that don't. `never` is the lower bound of the type system, the dual of `unknown` at the top, and it's exactly what makes the next pattern's safety net work.
+**`never`.** The declaration is legal; the resulting type is just uninhabited. `&` keeps the values common to both operands, and no single value is simultaneously a `string` and a `number`, so the set is empty — and TypeScript's name for "a type with no values" is `never`. This is the same rule as `A & B` on objects, not a special case: there it intersected two sets that overlap, here it intersects two that don't. `never` is the *bottom type* — the lower bound of the type system, the dual of `unknown` at the top — and it's exactly what makes the next pattern's safety net work.
 :::
 
 The same thing happens, more quietly, when two object types intersect on a property whose types conflict: `{ kind: "circle" } & { kind: "rect" }` gives a type whose `kind` is `"circle" & "rect"`, i.e. `never` — a shape no object can satisfy. The intersection doesn't error at the type level; it produces an uninhabitable type, and you only hear about it when you try to construct a value. Hold onto that — it's the mechanism behind exhaustiveness checking below.
@@ -160,7 +160,7 @@ The discriminant doesn't have to be a string. A boolean works — `{ ok: true; v
 :::quiz
 The discriminant `kind` is typed `"circle" | "rect" | "triangle"`, not `string`. What earlier feature makes that possible, and why would `string` break the whole pattern?
 :::answer
-**Literal types** (Lesson 02). Because each member fixes `kind` to one literal, the union of members gives `s.kind` the literal-union type `"circle" | "rect" | "triangle"`. That is what lets `switch (s.kind)` discriminate: matching `case "circle"` means `s` can only be the member whose `kind` is *exactly* `"circle"`. If `kind` were widened to `string`, then in every branch `s.kind` could be any string, so the compiler could never rule out any member — every variant would remain possible in every case, and no narrowing could occur. This is why literal inference is load-bearing: the moment the tag widens to `string` (which is what happens to a plain `let` or an un-asserted object property), the discriminated union silently degrades into an ordinary union you can't `switch` on.
+**Literal types** (Lesson 02). Because each member fixes `kind` to one literal, the union of members gives `s.kind` the literal-union type `"circle" | "rect" | "triangle"`. That is what lets `switch (s.kind)` discriminate: matching `case "circle"` means `s` can only be the member whose `kind` is *exactly* `"circle"`. Widen `kind` to `string` and every branch could hold any string, so the compiler can never rule a member out — no narrowing happens. This is why literal inference is load-bearing: the moment the tag widens to `string` (what a plain `let` or an un-asserted object property gives you), the discriminated union silently degrades into an ordinary union you can't `switch` on.
 :::
 
 ## Exhaustiveness checking, for free and forever

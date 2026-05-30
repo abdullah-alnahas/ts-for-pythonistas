@@ -3,7 +3,7 @@ title: Advanced & utility types
 subtitle: Computing types from other types — the part Python's typing has no analog for
 ---
 
-Classes earned their place by having a runtime body: a real constructor, real `#` fields, objects that exist while the program runs. This lesson runs in the other direction entirely. Everything here happens at compile time and leaves nothing behind — you write expressions whose values are *types*, the compiler evaluates them, and then [[erases|type-erasure]] the lot (Lesson 01). The output isn't code that runs; it's the set of constraints `tsc` checks your code against.
+Classes earned their place by having a runtime body: a real constructor, real `#` fields, objects that exist while the program runs. This lesson runs in the other direction entirely. Everything here is type-level computation — it happens at compile time and leaves nothing behind. You write expressions that evaluate to *types*, `tsc` reduces them, and then [[erases|type-erasure]] the lot (Lesson 01). The output isn't code that runs; it's the set of constraints the compiler checks your code against.
 
 Here is the problem it solves. You have a `User` type, and you need the shape of a PATCH body for an update endpoint: every field optional, minus `id`. In Python you write a second `TypedDict` with the fields copied over and `total=False`, and you keep the two in sync by hand for the life of the codebase. In TypeScript you write `Partial<Omit<User, "id">>`, and the shape is *computed* from `User`. Add a field to `User` and the patch shape gains it on the next compile, with no edit to the derived type.
 
@@ -62,15 +62,15 @@ Three steps stack here, and since there's no Python equivalent to lean on, each 
   "admin" | "editor" | "viewer"            union of all element types
 ```
 
-The `as const` is the load-bearing part. Without it, the compiler infers the *widened* type `string[]` for the array — because a normal `let`/`const` array is mutable, and a mutable array of `"admin"` could later hold any string, so narrowing to the literal would be [[unsound|soundness-vs-completeness]]. `as const` tells the compiler the array is `readonly` and will never change, which licenses it to keep the exact literal types and freeze the length into a tuple. (This is the same widening machinery from Lesson 02, where `const x = "admin"` infers `"admin"` but `let x = "admin"` infers `string` — `as const` extends that literal-preserving behavior into arrays and objects.)
+The `as const` is the load-bearing part. Without it the compiler *widens* the array to `string[]`: a mutable array of `"admin"` could later hold any string, so keeping the literal would be [[unsound|soundness-vs-completeness]]. `as const` marks the array `readonly`, which licenses the compiler to keep the exact literal types and freeze the length into a tuple. This is the widening from Lesson 02 — `const x = "admin"` infers `"admin"`, `let x = "admin"` infers `string` — extended into arrays and objects.
 
-Then `typeof ROLES` lifts the tuple into the type world, and `[number]` indexes it by *any* numeric index at once. Indexing a tuple by the specific type `number` (rather than a literal like `0`) means "the type at any position," which is the union of every element's type. The precedence reads as `(typeof ROLES)[number]`; the parentheses are optional but the grouping is what's happening.
+Then `typeof ROLES` lifts the tuple into the type world, and `[number]` is indexed access by `number` — not a literal position like `[0]`, but *any* numeric index, which yields the union of every element's type. It parses as `(typeof ROLES)[number]`; the parentheses are optional.
 
 The payoff is a single source of truth. The runtime array drives the runtime behavior (you `.join` it, iterate it, send it over the wire), and the same array drives the compile-time type. There is no second list to forget. In Python you'd reach for an `Enum` to get both a runtime collection and a static type from one declaration — which is close in spirit, but an `Enum`'s members are `Enum` instances, not the bare strings, so it's a different runtime shape, not a type derived from a plain list.
 
 ## The built-in utility types
 
-TypeScript ships a standard library of these type-level functions. You'll spend most of your time *consuming* them rather than writing your own. The ones worth knowing on sight:
+That pattern you wrote by hand; most type-level transforms you'll never write, because TypeScript ships a standard library of them. You'll spend most of your time *consuming* these rather than authoring your own. The ones worth knowing on sight:
 
 ```typescript
 interface User { id: number; name: string; email: string }

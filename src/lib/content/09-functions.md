@@ -1,11 +1,11 @@
 ---
 title: Functions, deeply
-subtitle: Params, overloads, this, and the void return rule
+subtitle: Params, overloads, the void return rule — and the two places functions break from Python: no keyword arguments, and a call-bound `this`
 ---
 
 ## From narrowing the body to typing the boundary
 
-Lesson 08 was about what the compiler learns *inside* a function — how a `typeof` or an `in` check narrows a value as control flow proceeds. This lesson is about the function's edges: the parameter list it advertises, the return it promises, and the `this` it secretly depends on. Most of the mechanics look familiar from Python, and where they differ the difference is usually syntactic. Two places are not syntactic, and they're the ones worth slowing down for: the absence of keyword arguments, which reshapes how every configurable function in the ecosystem is written, and `this`, which in JavaScript depends on *how* a function is called rather than where it was defined. We'll get the familiar parts out of the way first.
+Lesson 08 was about what the compiler learns *inside* a function — how a `typeof` or an `in` check narrows a value as control flow proceeds. This lesson is about the function's edges: the parameter list it advertises, the return it promises, and the `this` it depends on. Most of the mechanics look familiar from Python, and where they differ the difference is usually syntactic. Two places are not: the absence of keyword arguments, which reshapes how every configurable function in the ecosystem is written, and `this`, which in JavaScript is bound by *how* a function is called rather than where it was defined. We'll clear the familiar parts first.
 
 ## Parameters: optional, default, rest
 
@@ -37,7 +37,7 @@ greet("Ada", "Dr", "vip", "new");
 ```
 :::
 
-An optional parameter is marked with `?`, and inside the body its type is `string | undefined` — the `?` is exactly shorthand for adding `| undefined` (Lesson 06). A defaulted parameter (`title: string = "Dr"`) is also optional from the caller's side, but inside the body it reads as `string`, because the default guarantees a value was bound. Rest is `...tags: string[]`, the analog of `*args`, and the binding is a real `Array`, not a fixed-length tuple — there's no positional type information left once arguments fall into the rest slot.
+An optional parameter is marked with `?`, and inside the body its type is `string | undefined` — the `?` is exactly shorthand for adding `| undefined` (Lesson 06). A defaulted parameter (`title: string = "Dr"`) is also optional from the caller's side, but inside the body it reads as `string`, because the default guarantees a value was bound. Rest is `...tags: string[]`, the analog of `*args`, and the binding is a real `Array`, not a tuple — once arguments fall into the rest slot, no per-position type survives.
 
 The constraint that optional params must follow required ones is the same rule Python enforces, and for the same reason: arguments are matched positionally, so there's no way to supply a later argument while skipping an earlier optional one. But there's a subtlety that doesn't exist in Python, and it's worth being precise about: an optional parameter and an explicitly `| undefined` parameter are *not* interchangeable for callers.
 
@@ -54,7 +54,7 @@ The bodies are identical — in both, `x` has type `number | undefined`. The dif
 
 ### No keyword arguments: the options object
 
-This is the first real divergence. JavaScript has no keyword arguments — there is no `connect(timeout=30)`. A call is a positional list, full stop, and `name=value` inside a call would be parsed as an assignment expression, not a named binding. Python's keyword-only parameters (everything after the bare `*`) have no equivalent at all. The idiom that fills the gap is a single object parameter, destructured with defaults in the body.
+This is the first real divergence. JavaScript has no keyword arguments — there is no `connect(timeout=30)`; a call is a positional list, and `name=value` inside one parses as an assignment expression, not a named binding. Python's keyword-only parameters (everything after the bare `*`) have no equivalent at all. The idiom that fills the gap is a single options object, destructured with defaults in the body.
 
 :::compare
 ```python
@@ -101,7 +101,7 @@ Only A. A fresh object literal passed directly to a typed slot gets **excess pro
 
 ## Arrow functions and `function`
 
-TypeScript inherits JavaScript's two ways of writing a function, and the choice is not purely stylistic. Python's `def`/`lambda` split is about *form* — `lambda` is expression-only, so anything with statements needs `def`. The arrow-vs-`function` split is about *form too*, but it carries a second, more consequential difference in how `this` is bound, which is the subject of the last section.
+TypeScript inherits JavaScript's two ways of writing a function, and the choice is not purely stylistic. Python's `def`/`lambda` split is about *form* — `lambda` is expression-only, so anything with statements needs `def`. The arrow-vs-`function` split is also about form, but it carries a second, more consequential difference in how `this` is bound — the subject of the last section.
 
 :::compare
 ```python
@@ -222,7 +222,7 @@ console.log("never reached");
 ```
 :::
 
-Running it shows the failure: `f()` has no receiver, so `this` is `undefined` in strict-mode JavaScript, and `this.count++` throws. The reason this is a *runtime* surprise and not a compile error deserves attention, because the compiler's silence here is itself a lesson. Method shorthand on an object literal gives `inc` an *implicit* `this` of the object's type, but that constraint is attached to the method, not to the standalone function value you get by reading `counter.inc`. The detached value has type `() => void` with no `this` requirement, so the bare call `f()` type-checks even though it's the bug. The type system models JavaScript's actual `this` rule faithfully — and JavaScript's actual rule is that a bare call has no receiver.
+Running it shows the failure: `f()` has no receiver, so `this` is `undefined` in strict-mode JavaScript, and `this.count++` throws. Why this is a *runtime* surprise and not a compile error is the interesting part. Method shorthand on an object literal gives `inc` an *implicit* `this` of the object's type, but that constraint is attached to the method, not to the standalone function value you get by reading `counter.inc`. The detached value has type `() => void` with no `this` requirement, so the bare call `f()` type-checks even though it's the bug. The type system models JavaScript's actual `this` rule faithfully — and that rule is that a bare call has no receiver.
 
 Arrow functions opt out of the whole mechanism. An arrow has no `this` of its own; it closes over the `this` of the scope where it was written, lexically, the way any other free variable is captured. That's why an arrow used as a callback keeps pointing at the right object even when the callback is invoked later, with no dot, by some scheduler that knows nothing about your instance:
 
@@ -237,7 +237,7 @@ class Timer {
 
 Had that callback been a `function () { this.seconds++; }`, `setInterval` would call it with no receiver and `this` would be wrong — the same detachment bug, one layer down. The arrow sidesteps it by never having a dynamic `this` to lose.
 
-There's one more tool, and it closes the gap the detached-`f()` example left open. You can declare `this` as a fake leading parameter — it has no runtime existence and is [[erased|type-erasure]] like everything else, but it tells the compiler what receiver the function requires. With it, detaching becomes a compile error instead of a runtime one:
+There's one more tool, and it closes the gap the detached-`f()` example left open: a `this` parameter, declared first in the list. It has no runtime existence and is [[erased|type-erasure]] like everything else, but it tells the compiler what receiver the function requires. With it, detaching becomes a compile error instead of a runtime one:
 
 ```typescript
 function tick(this: { count: number }) { this.count++; }

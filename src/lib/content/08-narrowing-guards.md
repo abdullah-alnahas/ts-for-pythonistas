@@ -1,13 +1,13 @@
 ---
 title: Narrowing & type guards
-subtitle: How the compiler follows your control flow and refines a type as it goes
+subtitle: How control-flow analysis refines a union, member by member, as it goes
 ---
 
 ## From inference to narrowing
 
-In the last lesson the compiler took `first([1, 2, 3])` and deduced `T = number` without being told — inference reading a concrete type out of the code you wrote. Narrowing is the same instinct pointed at a different problem. There the question was "what is this generic standing in for"; here it's "given a value whose type is a union, which member is it *at this exact line*." A parameter typed `string | number` is genuinely both possibilities when it enters the function. By the time you've run an `if`, it may be only one. The compiler tracks that, statement by statement, and the refined type is what autocomplete and the method checker use on each line.
+In the last lesson the compiler took `first([1, 2, 3])` and deduced `T = number` without being told — inference reading a concrete type out of the code you wrote. Narrowing is the same instinct pointed at a different problem. There the question was "what is this generic standing in for"; here it's "given a value whose static type is a union, which member is it *at this line*." A parameter typed `string | number` is both possibilities on entry. After an `if`, it may be only one. The compiler tracks that statement by statement, and the narrowed type is what autocomplete and method resolution use on each line.
 
-This is the same idea as [[mypy]] narrowing inside an `isinstance` block, but TypeScript pushes it considerably further, and the extra distance is where the interesting behavior lives. Start with the move that surprises people coming from [[mypy]].
+This is [[mypy]] narrowing inside an `isinstance` block, pushed considerably further — and the extra distance is where the interesting behavior lives. Start with the move that surprises people coming from [[mypy]].
 
 ## After the check, with no check
 
@@ -152,7 +152,7 @@ function city(u: { address?: { city: string } }): string {
 }
 ```
 
-It is the same control-flow analysis, scoped to the expression. The right side of `&&` is only evaluated when the left side held, so the compiler knows `x` is non-null there. This is why short-circuit guards read naturally — the type tracks the evaluation order the operators already impose.
+It is the same control-flow analysis, scoped to the expression rather than to statements. The right operand of `&&` runs only when the left held, so the compiler narrows `x` to non-null there — the type tracks the short-circuit evaluation order the operators already impose.
 
 ## Discriminated unions: the clean case, plus exhaustiveness
 
@@ -177,7 +177,7 @@ function assertNever(x: never): never {
 }
 ```
 
-The `default` branch is the part worth dwelling on, because it turns narrowing into a maintenance tool. By the time control reaches it, both `case`s have eliminated their variants, so the compiler narrows `s` to `never` — the empty type, the type with no values. Passing `s` to a function whose parameter is `never` type-checks only while `s` really is `never`. Add a third variant to `Shape` later and forget to handle it, and `s` in the `default` is now that variant, not `never`; `assertNever(s)` stops compiling:
+The `default` branch is the part worth dwelling on, because it turns narrowing into a maintenance tool. By the time control reaches it, both `case`s have eliminated their variants, so the compiler narrows `s` to `never` — the bottom type, the one no value inhabits. Passing `s` to a parameter typed `never` type-checks only while `s` really is `never`. Add a third variant to `Shape` later and forget to handle it, and `s` in the `default` is now that variant, not `never`; `assertNever(s)` stops compiling:
 
 ```
 Argument of type '{ kind: "triangle"; ... }' is not assignable to parameter of type 'never'.
@@ -258,7 +258,7 @@ u = undefined; // reassigned somewhere in this function
 **No** — the compiler rejects `u.name` in the callback. The deciding factor is that `u` is **reassigned somewhere in the function** (`u = undefined` below). The callback could run after that reassignment, so the compiler cannot assume the `if (u)` narrowing still holds when the closure executes, and it discards the refinement inside the closure body. The bindings whose narrowing *does* survive into a closure are `const` and a parameter the compiler can see is never reassigned. A plain `let` does not — even one that is in fact never reassigned, TypeScript still drops its narrowing across a deferred call. So the rule is not the syntactic `let`-versus-`const` one; it is closer to "`const` and never-reassigned parameters keep it, everything else loses it past a deferred call," and it has no Python parallel — [[mypy]] does not model deferred execution this way.
 :::
 
-The mechanism is worth stating precisely, because the common shorthand ("`let` loses narrowing, `const` keeps it") is close but not quite the rule. The compiler scans the binding's entire scope. If a binding is reassigned anywhere, it treats the narrowed type as potentially stale at any point where execution is deferred — inside a function expression that might be called later — and drops the refinement there. Two kinds of binding survive that deferral: a `const`, and a parameter the compiler can see is never reassigned. A plain `let` does not: TypeScript drops a `let`'s narrowing across a deferred call even when the `let` is in fact never reassigned, so the practical effect lines up with the shorthand for `let`, just not for the reason the shorthand gives. The fix in every losing case is the same — copy the proven value into a binding that cannot change:
+The mechanism behind that rule is worth pinning down, because the common shorthand ("`let` loses narrowing, `const` keeps it") gets the right answer for the wrong reason. The compiler scans the binding's whole scope. If the binding is reassigned *anywhere* in it, the narrowed type is treated as potentially stale wherever execution is deferred — inside a function expression that might run later — and the refinement is dropped there. Only two bindings survive that deferral: a `const`, and a parameter the compiler sees is never reassigned. A plain `let` never does, even one that is in fact never reassigned — so the shorthand's verdict for `let` happens to be right, while its reasoning isn't. The fix in every losing case is the same: copy the proven value into a binding that cannot change.
 
 ```typescript
 let u: User | undefined = getUser();

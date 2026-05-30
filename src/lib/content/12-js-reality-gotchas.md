@@ -1,6 +1,6 @@
 ---
 title: The JS reality layer & gotchas
-subtitle: any vs unknown, assertions, ===, tsconfig, .d.ts, @types
+subtitle: What erasure leaves behind — any vs unknown, assertions, and the JavaScript runtime the types sit on top of
 ---
 
 Lesson 11's type-level machinery — every [[conditional|conditional-types]], [[mapped|mapped-types]], and computed type — vanishes the instant `tsc` finishes, the same [[erasure|type-erasure]] Lesson 01 established for ordinary annotations. This lesson is what that [[erasure|type-erasure]] leaves behind. Once the types are gone, what runs is plain JavaScript, and JavaScript has its own rules — for equality, for truthiness, for what an object *is* at runtime — that the type layer sits on top of but does not change. Most of the surprises a Python developer hits in their first month of TypeScript are not type-system surprises at all; they are JavaScript leaking through. So this is two lessons braided together: the type system's own escape hatches (`any`, `unknown`, `as`), which decide how much you can trust the compiler, and the runtime semantics underneath (`===`, falsy values, object identity), which decide what happens when the compiler is no longer watching. The two meet at the boundary where outside data enters your program, which is where the lesson — and the course — ends.
@@ -9,7 +9,7 @@ Lesson 11's type-level machinery — every [[conditional|conditional-types]], [[
 
 TypeScript has two types that every other type is assignable to — two "tops." They look similar and behave as opposites, and choosing between them is the single most consequential type decision you make routinely.
 
-`any` is an escape from the type system. A value typed `any` accepts every operation: you can call it, index it, add to it, assign it anywhere. The checker simply stops having an opinion. `unknown` is the disciplined version of the same idea — it also holds any value, but it permits *no* operation until you prove, in code the compiler can follow, what the value actually is.
+`any` is an escape hatch from the type system. A value typed `any` accepts every operation — call it, index it, add to it, assign it anywhere — because the checker stops having an opinion. `unknown` is the disciplined version of the same idea: it also holds any value, but it permits *no* operation until you [[narrow|narrowing]] it to something specific.
 
 :::compare
 ```python
@@ -36,9 +36,9 @@ function g(x: unknown) {
 ```
 :::
 
-The Python analogy is close but not exact. `Any` is genuinely TypeScript's `any`: an opt-out that propagates. There is no clean Python equivalent of `unknown`. `object` is the usual reach, and it does forbid attribute access the way `unknown` forbids operations, but `object` is a real type in the runtime hierarchy with members of its own (`__class__`, `__hash__`), whereas `unknown` is a pure type-system construct — a name for "some value, not yet identified" — that erases to nothing. The practical difference: narrowing an `object` in Python still leans on `isinstance` against runtime classes, while narrowing an `unknown` uses the JavaScript-level checks that survive [[erasure|type-erasure]] (`typeof`, `in`, `instanceof` on real constructors), exactly as covered in Lesson 08.
+The Python analogy is close but not exact. `Any` is genuinely TypeScript's `any`: an opt-out that propagates. `unknown` has no clean equivalent. `object` is the usual reach — it does forbid attribute access the way `unknown` forbids operations — but `object` is a real type in the runtime hierarchy with members of its own (`__class__`, `__hash__`), whereas `unknown` is a pure type-system construct that [[erases|type-erasure]] to nothing. The practical difference: you [[narrow|narrowing]] an `object` with `isinstance` against runtime classes, while you narrow an `unknown` with the JavaScript-level checks that survive [[erasure|type-erasure]] (`typeof`, `in`, `instanceof` on real constructors), exactly as in Lesson 08.
 
-The reason to care is what `any` does to the code *around* it, not just the value itself. `any` is contagious: any expression that touches an `any` becomes `any`, and the infection spreads silently outward with no diagnostic at the boundary.
+The reason to care is what `any` does to the code *around* it, not just the value itself. `any` is contagious: any expression that touches an `any` becomes `any`, and it spreads outward with no diagnostic to mark where.
 
 ```typescript
 function h(x: any) {
@@ -48,7 +48,7 @@ function h(x: any) {
 }
 ```
 
-Nothing on those three lines is flagged, yet `z` could be a number at runtime and `.toUpperCase()` will throw. That is the cost: a single `any` doesn't disable checking for one value, it disables checking for everything that value flows into. `unknown` inverts the default — it refuses every operation, so the only way forward is to narrow, and narrowing is exactly the act of telling the compiler (and yourself) what you actually have. Use `unknown` for genuinely unidentified input — parsed JSON, data off the network, the variable in a `catch` — and let it force the check.
+Nothing on those three lines is flagged, yet `z` could be a number at runtime and `.toUpperCase()` will throw. That is the cost: a single `any` doesn't disable checking for one value, it disables checking for everything that value flows into. `unknown` inverts the default — it refuses every operation, so the only way forward is to [[narrow|narrowing]], which is precisely the act of telling the compiler what you actually have. Use `unknown` for genuinely unidentified input — parsed JSON, data off the network, the binding in a `catch` — and let it force the check.
 
 That last case is worth pinning down, because it changed and the behavior depends on `strict`:
 
@@ -61,7 +61,7 @@ try {
 }
 ```
 
-Before this default, `e` was typed `any`, and code reached straight for `e.message` — which is wrong, because anything can be thrown in JavaScript, not just `Error` instances (`throw "boom"` and `throw { code: 42 }` are both legal). Strict mode types the binding `unknown` precisely so you handle the case where what was thrown isn't an `Error` at all. It is the same discipline Python imposes by making you name the exception class in `except`, except here the binding starts maximally untrusted.
+Without `useUnknownInCatchVariables`, `e` is typed `any`, and code reaches straight for `e.message` — wrong, because anything can be thrown in JavaScript, not just `Error` instances (`throw "boom"` and `throw { code: 42 }` are both legal). Typing the binding `unknown` forces you to handle the case where what was thrown isn't an `Error` at all. Python imposes the same discipline by making you name the exception class in `except`; here the binding starts maximally untrusted and you earn the narrowing.
 
 :::quiz
 You receive `x: unknown` and want `x.toUpperCase()`. Why does the compiler reject the call outright, and what is the minimal fix?
@@ -77,7 +77,7 @@ if (typeof x === "string") return x.toUpperCase();
 
 ## Type assertions: `as`
 
-Narrowing is how you *earn* a more specific type. An assertion is how you *claim* one without earning it. `x as T` tells the compiler "treat this expression as a `T`," and the compiler complies — it adjusts the static type and emits no check whatsoever. Nothing is converted, validated, or even looked at; `as` is [[erased|type-erasure]] with every other type.
+Narrowing is how you *earn* a more specific type. A type assertion is how you *claim* one without earning it. `x as T` tells the compiler "treat this expression as a `T`," and it complies — it adjusts the static type and emits no check. Nothing is converted or validated; `as` is [[erased|type-erasure]] with every other type.
 
 ```typescript
 const el = document.getElementById("app") as HTMLCanvasElement;
@@ -155,7 +155,7 @@ if (items.length === 0) console.log("empty — the check you meant");
 ```
 :::
 
-Why does JavaScript draw the line here and Python there? Because Python lets a type define its own truthiness through `__bool__` (falling back to `__len__`), so a list *chooses* to be falsy when empty — truthiness is part of the object protocol. JavaScript has no such hook; truthiness is a fixed function of the value's type, decided by the language, not the object. There is nowhere to put "empty means false," so it isn't there. The same reason explains why you can't make a custom object falsy in JavaScript even if you wanted to.
+Why does JavaScript draw the line here and Python there? Because Python lets a type define its own truthiness through `__bool__` (falling back to `__len__`), so a list *chooses* to be falsy when empty — truthiness is part of the object protocol. JavaScript has no such hook: truthiness is a fixed function of the value's type, decided by the language, not the object. There is nowhere to put "empty means false," so it isn't there — and for the same reason, no custom object can ever be falsy.
 
 ## Object equality and the missing `__eq__`
 
@@ -221,7 +221,7 @@ import * as mod from "./mod";    // namespace import
 ```
 :::
 
-Three differences carry most of the friction. Named imports take braces — `import { helper }`, not `import helper` — and getting that wrong silently imports the *default* instead, which is a common first-day confusion. The `default` export has no Python equivalent: it's the module's designated "main thing," imported without braces under any name you choose, where Python has only named bindings. And paths are relative, written with a leading `./`, usually with no file extension — `from "./mod"` resolves `mod.ts`. Where the analogy holds cleanly: a namespace import (`import * as mod`) is Python's `import mod`, and an aliased import (`{ helper as h }`) is `from mod import helper as h` exactly.
+Three differences carry most of the friction. Named imports take braces — `import { helper }`, not `import helper` — and getting that wrong silently imports the *default* instead, a confusion worth recognizing on sight. The `default` export has no Python equivalent: it's the module's designated "main thing," imported without braces under any name you choose, where Python has only named bindings. And paths are relative, written with a leading `./`, usually with no file extension — `from "./mod"` resolves `mod.ts`. Where the analogy holds cleanly: a namespace import (`import * as mod`) is Python's `import mod`, and an aliased import (`{ helper as h }`) is `from mod import helper as h` exactly.
 
 One module form is type-system-specific: `import type`.
 
@@ -274,10 +274,10 @@ if (isUser(raw)) {            // a hand-written guard from Lesson 08…
 
 ## Recap
 
-- `any` switches the checker off and is contagious — anything it touches becomes `any`. `unknown` holds any value safely and forbids every operation until you narrow. Default to `unknown` for outside data; under `strict`, even a `catch` binding is `unknown`.
-- `as` is an unchecked compile-time claim (≈ `typing.cast`), [[erased|type-erasure]] like every type. It converts nothing. `as unknown as T` is a forced conversion and a smell.
-- Use `===`/`!==` everywhere; `==` runs a [[coercion]] algorithm. The only defensible loose check is `x == null`.
-- JavaScript's falsy set is fixed and contains no objects — `[]` and `{}` are truthy. Check `.length`/key count, never bare truthiness, for emptiness.
+- The two top types: `any` switches the checker off and is contagious — anything it touches becomes `any`. `unknown` holds any value but forbids every operation until you [[narrow|narrowing]]. Default to `unknown` for outside data; under `strict`, even a `catch` binding is `unknown`.
+- A type assertion (`as`) is an unchecked compile-time claim (≈ `typing.cast`), [[erased|type-erasure]] like every type. It converts nothing. `as unknown as T` is a forced conversion and a smell.
+- Use `===`/`!==` everywhere; `==` runs the [[coercion]] algorithm. The only defensible loose check is `x == null`.
+- JavaScript's falsy set is fixed and contains no objects — `[]` and `{}` are truthy. Check `.length` / key count for emptiness, never bare truthiness.
 - Objects compare by identity (`===` is Python's `is`); there is no `__eq__` and no operator overloading.
 - Keep `strict`; add `noUncheckedIndexedAccess` for new code. ES modules use braces for named imports, one `default` export, and `import type` for [[erased|type-erasure]] type-only imports.
 - `.d.ts` ≈ `.pyi`; `@types/x` ≈ a stubs package on PyPI; `declare module "x";` is the one-line shim for an untyped import.

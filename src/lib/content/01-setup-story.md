@@ -48,7 +48,7 @@ Consider where that value actually lands. The error under your variable the mome
 
 Every one of those is a compile-time or edit-time benefit. None needs the type to exist while the program runs. By the time the code executes the types have done their work, so erasing them costs nothing and saves the bytes and cycles of carrying them. That's why TypeScript [[erases|type-erasure]] — not as a limitation, but because there's no reason to keep them.
 
-The comparison with Python is worth making precise, because it's an actual rule and not a slogan. Python keeps its class- and signature-level annotations, so a validator like pydantic can reuse them at runtime; TypeScript [[erases|type-erasure]] its types, so the same job needs a separately declared schema ([[zod]] and similar). But this isn't a free win for TypeScript. The moment data arrives from outside the program — a request body, a parsed JSON file, an environment variable — its type is unchecked, and `tsc` has nothing to say about it, because there was no source for it to read. There you need a runtime validator, and you pay for it in either language. So the accurate summary isn't "TypeScript is faster because it [[erases|type-erasure]]." It's this: the compiler checks everything whose shape is known when you write it, once and for free; everything else stays unchecked until something verifies it at runtime. Real systems use both — `tsc` for the code's internal contracts, a runtime schema at the edges. TypeScript has a type for that not-yet-checked data, `unknown`, which we'll meet at type guards.
+The Python comparison is worth making precise — it's a rule, not a slogan. Python keeps its class- and signature-level annotations, so a validator like pydantic can reuse them at runtime; TypeScript [[erases|type-erasure]] its types, so the same job needs a separately declared schema ([[zod]] and similar). But this isn't a free win for TypeScript. The moment data arrives from outside the program — a request body, a parsed JSON file, an environment variable — its type is unchecked, and `tsc` has nothing to say about it, because there was no source for it to read. There you need a runtime validator, and you pay for it in either language. So the accurate summary isn't "TypeScript is faster because it [[erases|type-erasure]]." It's this: the compiler checks everything whose shape is known when you write it, once and for free; everything else stays unchecked until something verifies it at runtime. Real systems use both — `tsc` for the code's internal contracts, a runtime schema at the edges. TypeScript has a type for that not-yet-checked data, `unknown`, which we'll meet at type guards.
 
 ## Watching a type get erased
 
@@ -99,7 +99,7 @@ Everything left of `greet.js` is compile time, the only place types exist. Every
 
 ## No runtime type to inspect
 
-The first practical consequence affects Python developers in particular, because you rely on runtime type identity often.
+The first practical consequence lands hardest on Python developers, because you lean on runtime type identity constantly.
 
 :::compare
 ```python

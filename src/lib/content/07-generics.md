@@ -220,11 +220,11 @@ const a: Container = { value: "hi" }; // T defaults to string
 const b: Container<number> = { value: 1 };
 ```
 
-The default applies only where you write `Container` with no argument and the compiler has no other way to solve `T`. If `T` can be inferred from a value, inference wins; the default is the fallback for the otherwise-unconstrained case. It's most useful on types meant to be configured but usually left alone — a generic event emitter defaulting its payload to `unknown`, a container defaulting its element type.
+The default applies only where you write `Container` bare and the compiler has no value to solve `T` from; if `T` can be inferred, inference wins. It earns its keep on types meant to be configured but usually left alone — a generic event emitter defaulting its payload to `unknown`, a container defaulting its element type.
 
 ## `keyof` with generics: the pattern you'll see everywhere
 
-One combination is worth learning on its own, because it appears constantly: a type-safe property getter whose return type depends on which key you pass.
+Constraints unlock members on `T`; combine them with `keyof` and you can do something Python can't express at all — make a function's *return* type depend on which key the caller passed. The canonical case is a type-safe property getter.
 
 :::play
 ```typescript
@@ -239,7 +239,7 @@ console.log(getProp(user, "age") + 1);            // number -> 37
 ```
 :::
 
-Three pieces do the work. `keyof T` is the union of `T`'s key names — for `user` that's `"name" | "age"`. `K extends keyof T` constrains the second argument to be one of those keys, so passing `"email"` is rejected before the call runs. And `T[K]` is the indexed access type: the type stored at key `K`, which is `string` when `K` is `"name"` and `number` when `K` is `"age"`. The return type is computed from the *specific* key you passed, not collapsed to `string | number`.
+Three pieces do the work. `keyof T` is the union of `T`'s key names — for `user` that's `"name" | "age"`. `K extends keyof T` constrains the second argument to be one of those keys, so passing `"email"` is a compile error. And `T[K]` is the indexed access type: the type stored at key `K`, which is `string` when `K` is `"name"` and `number` when `K` is `"age"`. The return type is computed from the *specific* key you passed, not collapsed to `string | number`.
 
 There is no clean Python analogue. `TypedDict` plus `Literal` keys can approximate the call-site check, but Python has nothing that computes a return type from a key argument the way `T[K]` does — that is the compiler deriving one type from another, evaluated entirely at compile time and [[erased|type-erasure]] before anything runs ([[type-erasure]]). It's your first contact with the type-level language that Lesson 11 is built on. Worth recognizing now because once you see `<T, K extends keyof T>` you'll see it in every library you read.
 

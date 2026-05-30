@@ -1,6 +1,6 @@
 ---
 title: Primitives & variables
-subtitle: let / const, annotations, inference, and the primitive types
+subtitle: How let / const drive inference, and where the primitives diverge from Python's
 ---
 
 Lesson 01 ended on a claim: the compiler infers more than you tell it, and it treats `const` and `let` differently when it does. The same string literal, assigned to two variables, becomes two different types. That isn't a quirk to memorize — it falls out of one rule about reassignment that runs through everything in this lesson. So this is partly a tour of the primitive types, which are mostly familiar, and partly an account of how much the compiler knows about a value you never annotated. The surprises cluster in two places: how numbers work, and how narrow an inferred type really is. Start with the declaration keywords, because the inference rule is downstream of them.
@@ -24,11 +24,11 @@ X = 2;           // error: Cannot assign to 'X' because it is a constant.
 
 The boundary `const` draws is the same one `Final` draws: it blocks *rebinding the name*, not *mutating the object the name points at*. `const arr = [1]; arr.push(2)` is fine, because `push` never reassigns `arr` — it mutates the array `arr` already refers to. This is the reference/binding distinction you already hold from Python; `const` governs the binding, not the referent.
 
-`var` is the keyword to never reach for, and the reason is scoping. `let` and `const` are block-scoped — they exist only inside the nearest `{}` — and live in the [[temporal dead zone|tdz]] from the top of that block until their declaration line, so reading them early throws a `ReferenceError`. `var` is function-scoped and hoisted to `undefined`, so a read before the declaration returns `undefined` silently instead of failing. That silent `undefined` is the bug class `let`/`const` were designed to kill; it has no Python analogue because Python's scoping is already function-level with a loud `UnboundLocalError`. You will see `var` in old code. You should not write it.
+Never reach for `var`, and the reason is scoping. `let` and `const` are block-scoped — bound to the nearest enclosing `{}` — and live in the [[temporal dead zone|tdz]] from the top of that block until their declaration line, so reading them early throws a `ReferenceError`. `var` is function-scoped and hoisted to `undefined`, so a read before the declaration returns `undefined` silently instead of failing. That silent `undefined` is the bug class `let`/`const` were designed to kill; it has no Python analogue, because Python's scoping is already function-level and raises a loud `UnboundLocalError` instead. You will see `var` in old code; you should not write it.
 
 ## Annotations and inference
 
-The syntax for an annotation is `name: Type`, which reads like Python's, but the working style is different. In Python, annotating a local is cheap and common, partly because the runtime ignores it anyway and a checker like [[mypy]] infers conservatively. In TypeScript the inference is aggressive and good, so the idiom is to annotate at *boundaries* — function parameters, return types, exported values, anything another part of the program consumes — and let everything local infer. An annotation on a local is usually redundant, and worse, it can be a downgrade.
+The annotation syntax is `name: Type`, which reads like Python's, but the idiom around it is different. In Python, annotating a local is cheap and common, partly because the runtime ignores it anyway and [[mypy]] infers conservatively. TypeScript's inference is aggressive and precise, so the idiom is to annotate at *boundaries* — function parameters, return types, exported values, anything another part of the program consumes — and let everything local infer. An annotation on a local is usually redundant, and worse, it can be a downgrade.
 
 :::compare
 ```python
@@ -39,7 +39,7 @@ const name = "Ada";  // inferred as "Ada", and an annotation would widen it
 ```
 :::
 
-That last comment is the whole point of the lesson, so look closely. `const name: string = "Ada"` and `const name = "Ada"` are not the same declaration. The first tells the compiler "the type is `string`"; the second lets it infer, and what it infers is narrower — the literal type `"Ada"`, a type with exactly one value. Writing the annotation here doesn't add safety. It discards information the compiler already had. We'll come back to why the inferred type is that narrow, and when the narrowness pays off, after the primitives.
+That last comment is the whole point of the lesson. `const name: string = "Ada"` and `const name = "Ada"` are not the same declaration. The first pins the type to `string`; the second lets the compiler infer, and what it infers is narrower — the literal type `"Ada"`, inhabited by exactly one value. The annotation here adds no safety; it discards information the compiler already had. We'll come back to why the inferred type is that narrow, and when the narrowness pays off, after the primitives.
 
 ## The primitive types
 
@@ -81,7 +81,7 @@ In Python this never bit you for integer counters, because `int` is arbitrary-pr
 
 That gap is exactly what `bigint` fills — the second divergence. It is a genuinely separate primitive type for arbitrary-precision integers, written with an `n` suffix (`10n`, `9007199254740993n`). It is the closest thing to Python's `int`, but it is not interchangeable with `number`: the compiler rejects `10n + 1` because mixing the two in arithmetic is a `TypeError` at runtime, and TypeScript would rather stop you at compile time. You convert explicitly (`10n + BigInt(1)`, or `Number(10n) + 1`) and accept the cost. Most code never needs it; you want it for things like database bigint IDs or values that genuinely exceed the safe-integer range.
 
-Third, the type names and the literal values are lowercase: `string`, `number`, `boolean`, `null`, `true`, `false` — not `str`, `True`, `None`. There are capitalized `String`, `Number`, and `Boolean`, but those are the wrapper *object* types (the result of `new String("x")`, an object, not a primitive), and annotating with them is almost always a mistake. The convention to internalize is plain: lowercase for the primitives you actually use.
+Third, the type names and the literal values are lowercase: `string`, `number`, `boolean`, `null`, `true`, `false` — not `str`, `True`, `None`. The capitalized `String`, `Number`, and `Boolean` exist, but they are the wrapper *object* types (the result of `new String("x")`, an object, not a primitive), and annotating with them is almost always a mistake. Lowercase for the primitives, every time.
 
 ## String building
 

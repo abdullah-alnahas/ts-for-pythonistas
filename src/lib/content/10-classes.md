@@ -42,7 +42,7 @@ Three differences are visible before we touch the type system:
 
 - **Fields must be declared.** The `x: number; y: number;` lines are not optional. Drop them and assigning `this.x = x` in the constructor is an error (`TS2339: Property 'x' does not exist on type 'Point'`). Python builds the instance `__dict__` from whatever `__init__` assigns; TypeScript needs the field set fixed at the class declaration, because the instance type is derived from the declared members, not from tracing what the constructor happens to touch.
 - **`new` is mandatory.** `Point(1, 2)` without `new` is an error. There is no `new` in Python — `Point(1, 2)` *is* the call that allocates and runs `__init__` — but in JavaScript a class is a function, and calling it without `new` would run the constructor body with `this` unbound. TypeScript rejects the bare call rather than let that reach the runtime.
-- **`this`, not `self`, and implicit.** It isn't a parameter, so it isn't in the signature. Its [[binding rules — the call-site quirk from Lesson 09|this-binding]] — apply unchanged inside methods.
+- **`this`, not `self`, and implicit.** It isn't a parameter, so it never appears in the signature, and its [[call-site binding from Lesson 09|this-binding]] applies unchanged inside methods.
 
 ## Parameter properties collapse declare-and-assign
 

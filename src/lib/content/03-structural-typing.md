@@ -5,7 +5,7 @@ subtitle: Shape compatibility, decided at compile time, regardless of names
 
 ## From inference to compatibility
 
-Lesson 02 was about what the compiler knows about a single value: write `const greeting = "hi"` and it infers the literal type `"hi"`, write `let greeting = "hi"` and it widens to `string`, because the binding tells it whether the value can change. That was one value in isolation. The moment you pass that value somewhere — assign it to a typed variable, hand it to a function — a second question arises: given what the compiler knows about the value, and what it knows the destination requires, does the value *fit*? That question is type compatibility, and TypeScript answers it in a way that will reliably trip a Python instinct on the first try. This lesson is about how it decides, and why it decides that way.
+Lesson 02 was about what the compiler knows about a single value: `const greeting = "hi"` infers the literal type `"hi"`, `let greeting = "hi"` widens to `string`, because the binding tells it whether the value can change. That was one value in isolation. The moment you pass that value somewhere — assign it to a typed variable, hand it to a function — a second question arises: given what the compiler knows about the value and what the destination requires, is the value *assignable* to the destination? TypeScript answers it in a way that will reliably trip a Python instinct on the first try. This lesson is how it decides, and why it decides that way.
 
 ## Predict the error
 
@@ -30,13 +30,13 @@ show(c);
 Fine. No error. `c` was inferred as `{ x: number; y: number }` and never told it was a `Point`, and that is irrelevant. It *has the shape* `Point` describes, so it *is* acceptable as a `Point`. An error here is the [[nominal|nominal-vs-structural]] instinct firing — the rule [[mypy]] follows, where a name has to match. TypeScript does not look at the name at all.
 :::
 
-The property the compiler is checking has a name: TypeScript is [[structurally typed|structural-typing]]. A value is compatible with a type when its *shape* — its members and their types — satisfies what the type requires. Where the shape came from, what it was declared as, whether it inherits from anything: none of it enters the decision.
+The property the compiler is checking has a name: TypeScript is [[structurally typed|structural-typing]]. A value is assignable to a type when its *shape* — its members and their types — satisfies what the type requires. Where the shape came from, what it was declared as, whether it inherits from anything: none of it enters the decision.
 
 ## Why structural, and not nominal
 
-This is not an arbitrary preference; it falls out of what TypeScript is built on top of. Lesson 01 established that types are [[erased|type-erasure]] and the runtime is plain JavaScript. A JavaScript object is an unordered bag of properties with no durable notion of "which type produced me." `{ x: 1, y: 2 }` written as a literal and an instance of some `Point` class are, to the engine, the same kind of thing: an object with an `x` and a `y`. There is no [[nominal|nominal-vs-structural]] tag to check, because the runtime never carried one and the type layer was [[erased|type-erasure]] before the code ran. A type system layered onto that substrate has two honest choices: invent a [[nominal|nominal-vs-structural]] identity the runtime does not have and police it purely at compile time, or describe values by the only thing that is actually real about them — their shape. TypeScript chose shape. [[Nominal vs structural|nominal-vs-structural]] is the axis, and TypeScript sits at the [[structural|structural-typing]] end by construction, not by taste.
+This is not an arbitrary preference; it falls out of what TypeScript is built on top of. Lesson 01 established that types are [[erased|type-erasure]] and the runtime is plain JavaScript. A JavaScript object is an unordered bag of properties with no durable notion of "which type produced me." `{ x: 1, y: 2 }` written as a literal and an instance of some `Point` class are, to the engine, the same thing: an object with an `x` and a `y`. There is no [[nominal|nominal-vs-structural]] tag to check, because the runtime never carried one and the type layer was [[erased|type-erasure]] before the code ran. A type system layered onto that substrate has two honest choices: invent a [[nominal|nominal-vs-structural]] identity the runtime does not have and police it purely at compile time, or describe values by the only thing actually real about them — their shape. TypeScript chose shape, by construction rather than taste.
 
-You already know the runtime half of this from Python: [[duck typing|structural-typing]]. If it has `.read()`, it is file-enough. [[Structural typing|structural-typing]] is that same idea promoted to a *compile-time* discipline — the duck test, run by the type checker before the program executes, instead of by the interpreter when the call happens. The contrast with Python is that Python's runtime is [[duck-typed|structural-typing]] while its *type hints* are mostly [[nominal|nominal-vs-structural]]: a `Dog` is only a `Dog` to [[mypy]], even if some other class has every method `Dog` has. Here is that split directly.
+You already know the runtime half of this from Python: [[duck typing|structural-typing]]. If it has `.read()`, it is file-enough. [[Structural typing|structural-typing]] is that idea promoted to a *compile-time* discipline — the duck test run by the checker before execution, instead of by the interpreter at the call. The twist is that Python applies the two halves inconsistently: its runtime is [[duck-typed|structural-typing]], but its *type hints* are mostly [[nominal|nominal-vs-structural]] — a `Dog` is only a `Dog` to [[mypy]], even if some other class has every method `Dog` has. Here is that split directly.
 
 :::compare
 ```python
@@ -64,11 +64,11 @@ show(c); // ok — c has the shape Point requires
 ```
 :::
 
-Note that the Python call runs fine at runtime — `Coord(1, 2)` has `.x` and `.y`, so `show` would work. [[mypy]] rejects it anyway, because the *hint* layer is [[nominal|nominal-vs-structural]] even though the *runtime* is not. That mismatch between Python's [[nominal|nominal-vs-structural]] hints and its [[duck-typed|structural-typing]] execution is exactly the gap TypeScript closes by making its type layer [[structural|structural-typing]] too.
+The Python call runs fine at runtime — `Coord(1, 2)` has `.x` and `.y`, so `show` works. [[mypy]] rejects it anyway, because the *hint* layer is [[nominal|nominal-vs-structural]] even though the *runtime* is not. That mismatch between Python's [[nominal|nominal-vs-structural]] hints and its [[duck-typed|structural-typing]] execution is exactly the gap TypeScript closes by making its type layer [[structural|structural-typing]] too.
 
 ## "Has at least": the direction of compatibility
 
-The rule the prediction exposed generalizes to a single principle: a value is assignable to type `T` when it has *at least* every member `T` requires, each at a compatible type. Extra members are fine — `T` simply cannot see them. Compatibility therefore flows from the wider shape to the narrower requirement, never the reverse.
+The rule the prediction exposed generalizes to a single principle: a value is assignable to type `T` when it has *at least* every member `T` requires, each at a compatible type. Extra members are fine — `T` cannot see them. Assignability therefore flows from the wider shape to the narrower requirement, never the reverse.
 
 :::play
 ```typescript
@@ -128,7 +128,7 @@ The analogy is close but not exact, and the gaps are worth knowing. Python's `Pr
 
 ## The one exception: excess property checks on fresh literals
 
-The "has at least" rule has one deliberate hole, and it is the kind of thing that looks like a contradiction until you see what it is for.
+The "has at least" rule has one deliberate hole, and it looks like a contradiction until you see what it is for.
 
 :::predict
 Given `interface Opts { width: number }` and the rule just stated — extra members are fine — which of these compile under strict?
@@ -144,10 +144,10 @@ const b: Opts = tmp;                          // (B) same object, via a variable
 - (x) Only (B) compiles; (A) is an error.
 - ( ) Only (A) compiles; (B) is an error.
 :::answer
-Only (B). (A) errors with `'height' does not exist in type 'Opts'`. The general rule — "has at least" — is what (B) follows. (A) hits an *excess property check*: when an object literal is assigned directly to a typed target, the compiler additionally rejects members the target does not declare. The object in (B) is identical, but it has passed through a variable first, so the check does not apply and the permissive rule takes over.
+Only (B). (A) errors with `'height' does not exist in type 'Opts'`. (B) follows the general "has at least" rule. (A) hits an *excess property check*: when an object literal is assigned directly to a typed target, the compiler additionally rejects members the target does not declare. The object in (B) is identical, but it has passed through a variable first, so the check does not apply and the permissive rule takes over.
 :::
 
-The reason for the carve-out is concrete. The "has at least" rule is correct and useful, but it makes one common mistake invisible — a typo'd or stale property in an object you are constructing right at the point of use. Write `{ widht: 10 }` for an `Opts`, and under the pure rule the object would simply be "an object with no `width` and an extra `widht`," which fails for a different reason, or worse, if the field were optional, would silently pass. So the compiler tracks *freshness*: an object literal, at the moment it is written, is "fresh," and assigning a fresh literal directly to a typed slot triggers the extra check that flags unknown members. Store the literal in a variable and its type is now just `{ width: number; height: number }` — the freshness is gone, the object is an ordinary value, and only "has at least" applies. The check is a typo guard bolted onto literals, not a change to what assignability means. When you genuinely want extra fields on a literal, that is what index signatures are for, but the everyday read is simpler: inline literals are held to exactly their target's fields; everything else is "has at least."
+The reason for the carve-out is concrete. The "has at least" rule makes one common mistake invisible — a typo'd or stale property in an object you are constructing right at the point of use. Write `{ widht: 10 }` for an `Opts` and the pure rule reads it as "an object with no `width` and an extra `widht`," which fails for the wrong reason, or — if `width` were optional — silently passes. So the compiler tracks *freshness*: an object literal is "fresh" at the moment it is written, and assigning a fresh literal directly to a typed slot triggers the extra check that flags unknown members. Store the literal in a variable and its type is now just `{ width: number; height: number }`; the freshness is gone, the object is an ordinary value, and only "has at least" applies. Excess property checking is a typo guard bolted onto literals, not a change to what assignability means. When you genuinely want extra fields on a literal, that is what an index signature is for, but the everyday read is simpler: inline literals are held to exactly their target's fields; everything else is "has at least."
 
 ## What this buys you, and one place it bites
 
@@ -193,9 +193,9 @@ walk(t); // ok — structurally identical, so freely assignable
 ```
 :::
 
-Recovering a distinction the structure does not provide is the job of [[branding|branded-types]] — attaching a synthetic, never-constructed property that gives two otherwise-identical shapes different members, so they stop matching. It is the [[structural|structural-typing]]-world equivalent of `NewType`, and it gets its own treatment in Lesson 11. The point for now is to recognize the trade: [[structural typing|structural-typing]] hands you frictionless compatibility, and the price is that meaning carried by a *name* rather than a *shape* is invisible to the compiler until you encode it into the shape.
+Recovering a distinction the structure does not provide is the job of [[branding|branded-types]] — attaching a synthetic, never-constructed property that gives two otherwise-identical shapes different members, so they stop matching. It is the [[structural|structural-typing]]-world equivalent of `NewType`, and gets its own treatment in Lesson 11. The trade to recognize for now: [[structural typing|structural-typing]] hands you frictionless compatibility, and the price is that meaning carried by a *name* rather than a *shape* is invisible to the compiler until you encode it into the shape.
 
-## The empty type, and why `{}` is not what it reads as
+## Why `{}` is not the empty object it reads as
 
 Push "has at least" to its limit. If a type requires a set of members, and the required set is empty, then *everything that has at least nothing* satisfies it — which is nearly every value there is.
 
@@ -215,7 +215,7 @@ This is the rule's logical endpoint, not a special case: a smaller requirement a
 
 ## Structural matching is a compile-time judgment
 
-One more consequence ties this lesson back to the first. The compatibility decision — does this value have the shape this type requires — happens entirely during type checking. It leaves nothing behind.
+One more consequence ties this lesson back to the first. The assignability decision — does this value have the shape this type requires — happens entirely at compile time. It leaves nothing behind.
 
 :::quiz
 [[Structural typing|structural-typing]] matched `c` to `interface Point` by shape. So at runtime, can you write `if (x instanceof Point)` to test for that shape?
@@ -223,13 +223,13 @@ One more consequence ties this lesson back to the first. The compatibility decis
 No. `interface Point` is [[erased|type-erasure]]; there is no `Point` value at runtime for `instanceof` to test against, and `tsc` rejects the line outright (`'Point' only refers to a type, but is being used as a value here`). The shape match was a compile-time judgment and left no runtime artifact. To check a shape while the program runs you write the test by hand against real values — `typeof x === "object" && x !== null && "x" in x` — which is the subject of type guards in Lesson 08.
 :::
 
-[[Structural|structural-typing]] compatibility and runtime type tests live on opposite sides of the [[erasure|type-erasure]] line from Lesson 01. The compiler decides assignability by comparing shapes it can see in the source; the running program has only JavaScript values and JavaScript's own operators (`typeof`, `instanceof` on real constructors) to inspect them. Conflating the two — expecting an interface to be checkable at runtime, or expecting `typeof` to know about your types — is the single most common source of "why won't this work" once [[structural typing|structural-typing]] itself has clicked.
+[[Structural|structural-typing]] assignability and runtime type tests live on opposite sides of the [[erasure|type-erasure]] line from Lesson 01. The compiler decides assignability by comparing shapes it sees in the source; the running program has only JavaScript values and JavaScript's own operators (`typeof`, `instanceof` on real constructors) to inspect them. Conflating the two — expecting an interface to be checkable at runtime, or `typeof` to know about your types — is the single most common source of "why won't this work" once [[structural typing|structural-typing]] itself has clicked.
 
 ## Recap
 
-- TypeScript compares **shapes, not names** — the duck test, enforced by the compiler before the code runs.
+- TypeScript compares **shapes, not names** — the duck test, enforced by the compiler at compile time.
 - It is [[structural|structural-typing]] by construction: [[erased|type-erasure]] types over anonymous JavaScript objects leave shape as the only real thing to compare.
-- Assignable means **"has at least the required members"**; extra members are invisible to the requirement, so compatibility flows wide-to-narrow.
+- Assignable means **"has at least the required members"**; extra members are invisible to the requirement, so assignability flows wide-to-narrow.
 - The **one exception** is the excess-property check on *fresh* object literals — a typo guard that disappears the moment the literal passes through a variable.
 - Python's `Protocol` is the direct analog, but it is opt-in there and the only mode here; `NewType`'s [[nominal|nominal-vs-structural]] distinction maps to [[branding|branded-types]] (Lesson 11).
 - `{}` means "anything non-null," not "empty object." Reach for `object` or `unknown` instead.
