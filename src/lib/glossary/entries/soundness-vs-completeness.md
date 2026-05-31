@@ -28,32 +28,44 @@ the dynamic boundary.
 
 ## If you know precision and recall
 
-The two properties map onto the ML confusion matrix — but **the mapping
-flips depending on which outcome you label "positive,"** so fix that first.
+The standard definitions above are statements about the **accept** verdict
+(*type-checks ⟹ safe*; *safe ⟹ type-checks*), so the natural confusion
+matrix uses **prediction-positive = "the checker accepts (calls it
+well-typed)"** and **ground-truth positive = "the program is actually
+type-safe."** This is the assignment that makes "TypeScript is unsound" mean
+what everyone takes it to mean — it accepts programs that crash.
 
-The intuitive choice is **positive = "the checker accepts the program"**
-(it predicts "this is type-safe"):
+| | actually safe (**P**) | actually type-errors (**N**) |
+| --- | --- | --- |
+| **checker accepts** (predicts +) | **TP** | **FP** — soundness hole |
+| **checker rejects** (predicts −) | **FN** — completeness hole | **TN** |
 
-- A **false positive** is accepting a program that actually type-errors at
-  runtime — an unsoundness. Driving false positives to zero is
-  **precision = 1**, which is exactly **soundness**. (When a sound checker
-  passes your code, you can trust the pass — that *is* precision.)
-- A **false negative** is rejecting a program that would have run fine — an
-  incompleteness. Catching every genuinely-safe program is **recall = 1**,
-  which is exactly **completeness**.
+- **P** — programs that are genuinely type-safe. **N** — programs that
+  genuinely type-error at runtime.
+- **TP** — safe and accepted. **TN** — unsafe and rejected.
+- **FP** — unsafe but accepted: the checker passed code that breaks. A
+  **soundness** failure.
+- **FN** — safe but rejected: the checker refused code that was fine. A
+  **completeness** failure.
 
-So under the natural framing: **sound ⇔ precision**, **complete ⇔ recall**.
+Reading the metrics off that matrix:
 
-Watch the convention, though. Flip "positive" to mean **"the checker flags
-an error"** (treat it as a bug *detector*) and the labels swap: soundness
-becomes recall (catch every real bug — no misses) and completeness becomes
-precision (no false alarms). Same facts, mirrored matrix — which is why
-people sometimes state it the other way around. The takeaway that survives
-either framing: **soundness is about trusting what the checker accepts;
-completeness is about not rejecting valid code.** And the familiar
-precision/recall trade-off is the same tension designers face — push to
-catch every real error (more soundness) and you reject more valid programs
-(less completeness), and vice versa.
+- **Soundness = precision** = `TP / (TP + FP)`. Precision *of what?* **Of
+  the checker's acceptances** — its green checkmarks. Of every program it
+  passes, how many are truly safe. Sound ⇒ FP = 0 ⇒ precision = 1: you can
+  trust every "OK."
+- **Completeness = recall** = `TP / (TP + FN)`. Recall *of what?* **Of the
+  genuinely-safe programs** — the whole set of code that would actually run
+  fine. How much of it the checker accepts. Complete ⇒ FN = 0 ⇒ recall = 1:
+  it lets through everything good.
+
+One caveat so the mapping doesn't surprise you elsewhere: the
+**static-analysis / bug-finding** world flips "positive" to mean *"the tool
+flags an error."* Under that polarity the words swap — soundness becomes
+recall ("catch every bug, no misses") and completeness becomes precision
+("no false alarms"). Same facts, mirrored matrix. The type-theory framing
+here (and proof theory, where a sound prover proves only truths = precision)
+is the one that matches how "type soundness" is actually used.
 
 ## Are they related? Can a checker be both?
 
@@ -74,6 +86,39 @@ the question is decidable — a total (non-Turing-complete) language, or a
 restricted type system. (Note: "sound and complete" is routine for *logics*
 — propositional logic has sound-and-complete proof systems — because that's
 a different claim than deciding the runtime behavior of arbitrary code.)
+
+## Is any language complete?
+
+Yes — and that's the uncomfortable part: **completeness is the cheap
+property.** A checker that accepts *everything* is automatically complete
+(it rejects no program that would run fine) and also useless, because it
+catches nothing. So:
+
+- **Dynamically-typed languages are complete by abdication.** Plain Python
+  (no checker) or JavaScript reject nothing statically, so they reject no
+  safe program — vacuously complete, totally unsound.
+- **Gradual type systems are *mostly* complete on purpose.** TypeScript and
+  [[mypy]] are tuned to accept almost all valid code; `any` / `Any` is the
+  escape hatch that *protects* completeness — when the checker can't prove a
+  fragment safe, it accepts rather than rejects. They pay for that
+  acceptance rate by giving up soundness (the FP column above).
+
+The hard, valuable property is soundness; the real engineering goal is "be
+as sound as possible while staying complete enough that developers aren't
+fighting false rejections."
+
+A checker that is **both sound and complete *and* decidable** exists only
+when you drop Turing-completeness. Total languages — **Dhall** (a real
+config language) or the total fragments of **Agda** / **Idris** — have type
+checkers that always terminate and admit exactly their well-typed programs
+with no runtime type errors. The price is no unbounded recursion or general
+loops. Even then, "complete" means *relative to that language's own type
+discipline*: every nontrivial static system still rejects some program that
+would happen to run fine (simply-typed lambda calculus, for instance,
+rejects valid self-application). Perfect completeness against "all code that
+runs without error" is unreachable for any useful language; completeness
+against a fixed, decidable discipline is reachable, and total languages
+reach it.
 
 ## Where real checkers land
 
