@@ -3,6 +3,8 @@ title: Narrowing & type guards
 subtitle: How control-flow analysis refines a union, member by member, as it goes
 ---
 
+Start with a guard that looks right and ships a crash. You write `if (typeof x === "object") { return x.name; }` to pull a `name` off a value that might be anything — and it passes the type checker, and then it throws `TypeError: Cannot read properties of null (reading 'name')` the first time `x` is `null`, because `typeof null === "object"` is a bug JavaScript has carried since 1995. The check the compiler accepted was not the check you meant. This lesson is about the machinery the compiler runs to refine a type as your code tests it — where that machinery is sharper than [[mypy]], and where, as in that guard, it trusts a claim you got wrong. We come back to that exact `null` trap at the end, once the rules are in place.
+
 ## From inference to narrowing
 
 In the last lesson the compiler took `first([1, 2, 3])` and deduced `T = number` without being told — inference reading a concrete type out of the code you wrote. Narrowing is the same instinct pointed at a different problem. There the question was "what is this generic standing in for"; here it's "given a value whose static type is a union, which member is it *at this line*." A parameter typed `string | number` is both possibilities on entry. After an `if`, it may be only one. The compiler tracks that statement by statement, and the narrowed type is what autocomplete and method resolution use on each line.
