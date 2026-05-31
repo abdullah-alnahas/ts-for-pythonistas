@@ -40,9 +40,9 @@ If you read Python, this reads. `const tasks = []` is `tasks = []`. `function ad
 
 :::play
 ```typescript
-const tasks = [];
+const tasks: any[] = [];
 
-function addTask(title) {
+function addTask(title: string) {
   tasks.push({
     id: tasks.length + 1,
     title: title,
@@ -105,13 +105,13 @@ This is the episode's centrepiece, so run it yourself and read the output before
 
 :::play
 ```typescript
-const tasks = [];
+const tasks: any[] = [];
 
-function addTask(title) {
+function addTask(title: string) {
   tasks.push({ id: tasks.length + 1, title: title, status: "todo" });
 }
 
-function completeTask(id) {
+function completeTask(id: number) {
   for (const task of tasks) {
     if (task.id === id) {
       task.state = "done"; // typo: should be task.status

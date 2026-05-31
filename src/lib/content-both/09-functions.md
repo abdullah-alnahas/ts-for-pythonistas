@@ -127,8 +127,8 @@ const complete: Command = (tasks, arg) => {
 const commands: Record<string, Command> = { add, complete };
 
 const tasks: Task[] = [];
-console.log(commands.add(tasks, "write the recap"));  // added: write the recap
-console.log(commands.complete(tasks, "1"));            // completed #1
+console.log(commands["add"]!(tasks, "write the recap"));  // added: write the recap
+console.log(commands["complete"]!(tasks, "1"));            // completed #1
 ```
 :::
 

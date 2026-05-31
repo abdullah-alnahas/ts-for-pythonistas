@@ -101,15 +101,16 @@ Let's point the checker at the exact bug from episode 1 and at a few honest mist
 
 :::play
 ```typescript
-function validateStatus(s) {
+function validateStatus(s: unknown): boolean {
   return s === "todo" || s === "doing" || s === "done";
 }
 
-function isTask(value) {
+function isTask(value: unknown): boolean {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  if (typeof value.id !== "number") return false;
-  if (typeof value.title !== "string") return false;
-  if (!validateStatus(value.status)) return false;
+  const v = value as Record<string, unknown>;
+  if (typeof v.id !== "number") return false;
+  if (typeof v.title !== "string") return false;
+  if (!validateStatus(v.status)) return false;
   return true;
 }
 
