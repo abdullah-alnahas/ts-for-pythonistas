@@ -3,6 +3,8 @@ title: The setup story
 subtitle: Why TypeScript exists, and what its compile step does that Python's doesn't
 ---
 
+Here is the bug this whole course is about. You write `user.name.toUpperCase()`, ship it, and three weeks later it throws `TypeError: Cannot read properties of undefined (reading 'toUpperCase')` in production, because one code path handed `user` a value with no `name`. In Python you'd have caught it with a test, or not at all. The promise of TypeScript is that this line refuses to compile until you've proven `user.name` is a string — the crash is converted into a red underline in your editor, weeks earlier, before the code ever runs. Everything that follows is about *how* a language delivers that, and the first surprise is that it doesn't run your code at all.
+
 ## The step between writing and running
 
 In Python the file you write is the file that runs: `python greet.py` executes `greet.py` directly. The TypeScript equivalent doesn't, and the difference is worth getting exactly right.
