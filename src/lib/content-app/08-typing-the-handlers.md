@@ -180,15 +180,15 @@ function listCmd(status?: Status): string {
 // so each handler is checked against that signature at registration.
 type Command = (args: string[]) => string;
 const commands: Record<string, Command> = {
-  add: (args) => addCmd(args[0], ...args.slice(1)),
+  add: (args) => addCmd(args[0] ?? "", ...args.slice(1)),
   complete: (args) => completeCmd(Number(args[0])),
   list: (args) => listCmd(args[0] as Status | undefined),
 };
 
-console.log(commands.add(["write the intro", "urgent"]));
-console.log(commands.add(["ship it"]));
-console.log(commands.complete(["1"]));
-console.log(commands.list([]));
+console.log(commands["add"]!(["write the intro", "urgent"]));
+console.log(commands["add"]!(["ship it"]));
+console.log(commands["complete"]!(["1"]));
+console.log(commands["list"]!([]));
 // 1. [done] write the intro
 // 2. [todo] ship it
 ```
