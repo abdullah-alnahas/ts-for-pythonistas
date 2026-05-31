@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { lessons } from '$lib/content';
 	import { hydrateProgress, courseDone, courseLast } from '$lib/progress.svelte';
+	import CourseSwitcher from '$lib/components/CourseSwitcher.svelte';
 
 	hydrateProgress('classic');
 	const first = lessons[0];
@@ -60,6 +61,10 @@
 				</li>
 			{/each}
 		</ol>
+
+		<h2>Four ways to learn this</h2>
+		<p>Same TypeScript, four spines. Pick how you want to learn it — your choice is remembered.</p>
+		<CourseSwitcher current="classic" />
 
 		<h2>How to read each lesson</h2>
 		<ul>
