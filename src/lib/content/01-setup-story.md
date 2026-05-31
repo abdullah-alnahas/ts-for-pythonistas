@@ -14,13 +14,13 @@ python greet.py     # runs greet.py
 node greet.ts       # depends on your Node version
 ```
 
-`node greet.ts` does one of two things depending on your Node version. Before 22.18 it throws a `SyntaxError` — the parser reaches `const greeting: string` and has no rule for `: string`. On 22.18 and later it runs, because Node strips the annotations and executes the JavaScript underneath. Neither case executes the type syntax: one rejects it, the other deletes it first. No engine — V8, the browser, Node — runs TypeScript's types. Something always turns your `.ts` into JavaScript before it runs, and most early confusion about TypeScript is really confusion about that step. This lesson is about that step.
+`node greet.ts` does one of two things depending on your Node version. Before 22.18 it throws a `SyntaxError` — the parser reaches `const greeting: string` and has no rule for `: string`. On 22.18 and later it runs, because Node strips the annotations and executes the JavaScript underneath. Neither case executes the type syntax: one rejects it, the other deletes it first. No engine — [[V8]], the [[browser]], [[Node]] — runs TypeScript's types. Something always turns your `.ts` into JavaScript before it runs, and most early confusion about TypeScript is really confusion about that step. This lesson is about that step.
 
 ## Python compiles too
 
 You'll often hear the difference stated as: Python runs your source directly, TypeScript has to be compiled first. That's not accurate — Python compiles too.
 
-When you run `python greet.py`, CPython doesn't hand your source to the CPU. It compiles the source to bytecode — an instruction set for the Python virtual machine — and the VM executes the bytecode. The artifacts are visible: import a module and a `__pycache__/` directory appears next to it with files like `greet.cpython-311.pyc`, the cached bytecode. (The script you run directly is compiled the same way; CPython just keeps its bytecode in memory instead of writing the `.pyc`.) So Python has a compile step. It's automatic, invisible, and it targets the runtime that's already running, so you never had to think about it.
+When you run `python greet.py`, [[CPython]] doesn't hand your source to the CPU. It compiles the source to [[bytecode]] — an instruction set for the [[Python virtual machine|python-vm]] — and the VM executes the bytecode. The artifacts are visible: import a module and a [[__pycache__/|pycache]] directory appears next to it with files like `greet.cpython-311.pyc`, the cached bytecode. (The script you run directly is compiled the same way; CPython just keeps its bytecode in memory instead of writing the [[.pyc|pyc]].) So Python has a compile step. It's automatic, invisible, and it targets the runtime that's already running, so you never had to think about it.
 
 The real difference isn't whether there's a compile step — both languages have one — it's what each step does. CPython's step is a translation: source to bytecode for the same runtime, and it never looks at your types. Annotate a variable `x: int = "definitely not an int"` and CPython compiles and runs it without complaint; to the runtime the annotation is a no-op. `tsc`, the TypeScript compiler, does two things CPython's compiler never does: it reads your types and checks them against each other across the program, and it translates your code into a *different* language — JavaScript — that a *different* runtime (V8, Node, the browser) executes. The types are checked on the way through and then removed. None survive into the JavaScript.
 
@@ -42,7 +42,7 @@ The last row is the one most likely to surprise you, and we'll come back to it. 
 
 ## If the types get deleted, what was the point?
 
-It's the right question. You write annotations, the compiler checks them, and the result is discarded before the program runs. Python at least keeps some of your annotations — module-, class-, and function-signature annotations stay in `__annotations__`, where a library like pydantic can read them back and build a runtime validator (annotations on plain local variables are discarded, the same as in TypeScript). TypeScript keeps none. So why bother?
+It's the right question. You write annotations, the compiler checks them, and the result is discarded before the program runs. Python at least keeps some of your annotations — module-, class-, and function-signature annotations stay in [[__annotations__|dunder-annotations]], where a library like pydantic can read them back and build a runtime validator (annotations on plain local variables are discarded, the same as in TypeScript). TypeScript keeps none. So why bother?
 
 Because the value of types is collected before runtime, and once it's collected, keeping the types around buys nothing.
 

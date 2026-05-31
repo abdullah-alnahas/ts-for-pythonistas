@@ -62,7 +62,7 @@ listTasks();
 ```
 :::
 
-That ran in the playground, which uses the TypeScript compiler — but we fed it untyped JavaScript and it complied, because TypeScript is a superset of JavaScript: valid JS is valid TS, just with every type left for the compiler to guess. We are deliberately not using that guessing yet. Pretend it's a plain Node script.
+That ran in the playground, which uses the TypeScript compiler — but we fed it untyped JavaScript and it complied, because TypeScript is a superset of JavaScript: valid JS is valid TS, just with every type left for the compiler to guess. We are deliberately not using that guessing yet. Pretend it's a plain [[Node]] script.
 
 ## Now grow it, the way real code grows
 
@@ -138,7 +138,7 @@ The `JSON.stringify` line is the tell. The task object serializes as `{"id":1,"t
 
 Step back from the typo. The deeper fact is that **JavaScript objects have no enforced shape.** A function that receives an object cannot, on its own, know what fields that object is supposed to have. `completeTask` receives an `id`, finds an object, and writes to it — and the only "schema" for what that object should look like lives in your head and in the *other* function, `addTask`, that happened to create it. There is no point in the program where the intended shape is written down in a way the machine checks.
 
-Python developers feel a softer version of this. Duck typing means a Python function also doesn't demand a specific class; it just calls the methods it needs and trusts they're there. But Python has guardrails JavaScript lacks. Reading a missing dict key with `task["status"]` raises `KeyError` loudly. Reading a missing attribute raises `AttributeError`. Dataclasses and `__slots__` can lock a shape down. JavaScript's reflex in every one of these cases is to *not* complain: missing property reads return `undefined`, missing property writes create the property. The language was designed to keep running in a browser no matter what, and "keep running" beats "be correct."
+Python developers feel a softer version of this. Duck typing means a Python function also doesn't demand a specific class; it just calls the methods it needs and trusts they're there. But Python has guardrails JavaScript lacks. Reading a missing dict key with `task["status"]` raises `KeyError` loudly. Reading a missing attribute raises `AttributeError`. Dataclasses and `__slots__` can lock a shape down. JavaScript's reflex in every one of these cases is to *not* complain: missing property reads return `undefined`, missing property writes create the property. The language was designed to keep running in a [[browser]] no matter what, and "keep running" beats "be correct."
 
 That design choice is the entire reason this course exists. The bug above is not a story about carelessness — careful people ship it weekly. It is a story about a language that will happily let an object's shape drift away from what every function reading it expects, and never say a word.
 
