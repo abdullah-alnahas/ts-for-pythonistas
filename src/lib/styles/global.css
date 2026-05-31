@@ -170,7 +170,7 @@ input:focus-visible {
 /* Desktop sidebar hide/show toggle (mobile uses the hamburger instead). */
 .sidebar-toggle {
 	position: fixed;
-	top: 0.8rem;
+	top: 0.6rem;
 	z-index: 45;
 	font: inherit;
 	font-size: 0.8rem;
@@ -417,14 +417,18 @@ input:focus-visible {
 
 .progress-bar {
 	height: 6px;
-	margin: 0 0.6rem 0.8rem;
+	/* Top margin clears the fixed `.sidebar-toggle.hide` button so the button
+	   no longer sits on top of the bar (see layout). */
+	margin: 2rem 0.6rem 0.8rem;
 	background: var(--border);
 	border-radius: 99px;
 	overflow: hidden;
 }
 .progress-fill {
 	height: 100%;
-	background: var(--ok);
+	/* Theme accent — harmonizes with links/active states; the previous green
+	   (`--ok`) clashed with the otherwise blue palette. */
+	background: var(--accent);
 	transition: width 0.3s ease;
 }
 @media (prefers-reduced-motion: reduce) {
