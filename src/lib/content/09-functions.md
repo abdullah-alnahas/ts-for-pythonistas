@@ -160,6 +160,22 @@ function parse(x: string | number): number | string {
 
 The structural difference is which signatures the caller can see. In Python the `@overload`-decorated stubs are visible and the implementation `def parse(x)` is hidden from type checkers. In TypeScript the overload signatures *above* the implementation are the public interface, and the implementation signature is invisible to callers — it exists only so the body has something to type-check against, which is why it has to be a superset of every overload. A caller who passes a `string` sees the return type `number`; the wider `number | string` of the implementation never leaks out.
 
+Watch the overload set reject a call no individual signature accepts. `parse` is declared for `string` and for `number`; hand it a `boolean` and the compiler reports the mismatch against the public signatures, never the wider implementation one:
+
+:::play
+```typescript
+function parse(x: string): number;
+function parse(x: number): string;
+function parse(x: string | number): number | string {
+  return typeof x === "string" ? x.length : String(x);
+}
+
+console.log(parse("hello")); // 5  — string overload, returns number
+console.log(parse(42));      // "42" — number overload, returns string
+parse(true);                 // error TS2769: No overload matches this call.
+```
+:::
+
 Overloads are easy to overuse. When the relationship between input and output can be captured by a generic (Lesson 07) or a single union, that's almost always clearer, because overloads don't compose — the compiler picks the first matching signature rather than reasoning about the relationship. Reach for them only when the input-to-output mapping truly varies in a way generics can't capture.
 
 ## The `void` return rule
