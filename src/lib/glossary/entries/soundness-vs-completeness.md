@@ -28,22 +28,32 @@ the dynamic boundary.
 
 ## If you know precision and recall
 
-The two properties map cleanly onto the ML confusion matrix. Treat the
-checker's "positive" prediction as **"this program has a type bug, reject
-it."**
+The two properties map onto the ML confusion matrix — but **the mapping
+flips depending on which outcome you label "positive,"** so fix that first.
 
-- A **false negative** is the checker staying quiet about a program that
-  *does* blow up at runtime — a missed bug. Eliminating false negatives is
-  **recall = 1**, and that is exactly **soundness**.
-- A **false positive** is the checker rejecting a program that would have
-  run fine — a false alarm. Eliminating false positives is **precision =
-  1**, and that is exactly **completeness**.
+The intuitive choice is **positive = "the checker accepts the program"**
+(it predicts "this is type-safe"):
 
-So: **sound ⇔ perfect recall** (catch every real type error), **complete ⇔
-perfect precision** (never flag safe code). And the familiar
-precision/recall trade-off is the same tension type-system designers face —
-push to catch every bug (recall/soundness) and you start rejecting valid
-programs (precision/completeness drops), and vice versa.
+- A **false positive** is accepting a program that actually type-errors at
+  runtime — an unsoundness. Driving false positives to zero is
+  **precision = 1**, which is exactly **soundness**. (When a sound checker
+  passes your code, you can trust the pass — that *is* precision.)
+- A **false negative** is rejecting a program that would have run fine — an
+  incompleteness. Catching every genuinely-safe program is **recall = 1**,
+  which is exactly **completeness**.
+
+So under the natural framing: **sound ⇔ precision**, **complete ⇔ recall**.
+
+Watch the convention, though. Flip "positive" to mean **"the checker flags
+an error"** (treat it as a bug *detector*) and the labels swap: soundness
+becomes recall (catch every real bug — no misses) and completeness becomes
+precision (no false alarms). Same facts, mirrored matrix — which is why
+people sometimes state it the other way around. The takeaway that survives
+either framing: **soundness is about trusting what the checker accepts;
+completeness is about not rejecting valid code.** And the familiar
+precision/recall trade-off is the same tension designers face — push to
+catch every real error (more soundness) and you reject more valid programs
+(less completeness), and vice versa.
 
 ## Are they related? Can a checker be both?
 
