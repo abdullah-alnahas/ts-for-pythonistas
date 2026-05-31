@@ -5,7 +5,7 @@
 
 :root {
 	--bg: #fbfbfa;
-	--bg-elev: #ffffff;
+	--bg-elev: #fdfcfa; /* warm off-white, not pure #fff — softer reading-card bg, still elevated over --bg via its border */
 	--fg: #1f2328;
 	--fg-muted: #545b64; /* darkened → AA (≥4.5:1) even on tinted sidebar/active backgrounds */
 	--border: #e2e3e5;
@@ -15,8 +15,11 @@
 	--code-bg: #f6f8fa;
 	--code-border: #e6e8eb;
 	--sidebar-bg: #f3f3f1;
-	--sidebar-w: 290px;
-	--maxw: 820px;
+	--sidebar-w: 280px;
+	/* Reading-card width (user-resizable via the edge grips). Inner text measure =
+	   --read-w minus the card's side padding ≈ 690px ≈ 69 chars/line at 18px,
+	   inside the 45–75 readable range (Bringhurst ideal 66). */
+	--read-w: 760px;
 	--ok: #1a7f37;
 	--warn: #9a6700; /* A1.2: amber warning text, ~4.7:1 on light tinted bg */
 	--danger: #cf222e;
@@ -30,7 +33,7 @@
 	html:not([data-theme='light']) {
 		--bg: #0d1117;
 		--bg-elev: #161b22;
-		--fg: #e6edf3;
+		--fg: #c9d1d9; /* softened from #e6edf3 — near-white glared; ~10:1 on --bg-elev, AAA */
 		--fg-muted: #a4adba; /* A1.2: lightened from #9198a1 → ~5.5:1 on dark bg */
 		--border: #2a2f37;
 		--accent: #3178c6; /* keep dark accent at prior value (white-on-accent buttons unaffected) */
@@ -46,7 +49,7 @@
 html[data-theme='dark'] {
 	--bg: #0d1117;
 	--bg-elev: #161b22;
-	--fg: #e6edf3;
+	--fg: #c9d1d9; /* softened from #e6edf3 — near-white glared; ~10:1 on --bg-elev, AAA */
 	--fg-muted: #a4adba;
 	--border: #2a2f37;
 	--accent: #3178c6;
@@ -130,7 +133,11 @@ input:focus-visible {
 	}
 }
 
-/* ---------- shell ---------- */
+/* ---------- shell ----------
+   The reading card centres in the viewport (see `.page`). The sidebar is an
+   overlay pinned to the left gutter, so resizing or hiding it never shifts the
+   text. On wide screens it sits in empty gutter; on tighter desktops it floats
+   over the card edge (hide it for a clean full read). */
 .sidebar-wrap {
 	position: fixed;
 	inset: 0 auto 0 0;
@@ -138,10 +145,110 @@ input:focus-visible {
 	overflow-y: auto;
 	border-right: 1px solid var(--border);
 	background: var(--sidebar-bg);
+	z-index: 40;
+	transition: transform 0.2s ease;
 }
 .app-shell {
-	margin-left: var(--sidebar-w);
+	margin-left: 0;
 	min-height: 100vh;
+}
+/* Desktop hide: slide the sidebar (and its drag handle) off-canvas. */
+@media (min-width: 881px) {
+	html.sidebar-collapsed .sidebar-wrap {
+		transform: translateX(-100%);
+	}
+	html.sidebar-collapsed .sidebar-resize {
+		display: none;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.sidebar-wrap {
+		transition: none;
+	}
+}
+
+/* Desktop sidebar hide/show toggle (mobile uses the hamburger instead). */
+.sidebar-toggle {
+	position: fixed;
+	top: 0.8rem;
+	z-index: 45;
+	font: inherit;
+	font-size: 0.8rem;
+	line-height: 1;
+	padding: 0.4rem 0.6rem;
+	min-height: 32px;
+	border: 1px solid var(--border);
+	background: var(--bg-elev);
+	color: var(--fg-muted);
+	border-radius: 8px;
+	cursor: pointer;
+}
+.sidebar-toggle:hover {
+	color: var(--fg);
+	border-color: var(--accent);
+}
+.sidebar-toggle.hide {
+	left: calc(var(--sidebar-w) - 2.4rem);
+}
+.sidebar-toggle.show {
+	left: 0.8rem;
+}
+@media (max-width: 880px) {
+	.sidebar-toggle {
+		display: none;
+	}
+}
+
+/* Reading-width grips: thin lines at each card edge, highlighted on hover/drag. */
+.read-resize {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	width: 24px; /* comfortable grab target (WCAG 2.5.8); visible line stays 2px */
+	z-index: 30;
+	cursor: col-resize;
+	touch-action: none;
+	padding: 0;
+	border: none;
+	background: transparent;
+	appearance: none;
+	font: inherit;
+	color: inherit;
+}
+.read-resize.left {
+	left: calc(50% - var(--read-w) / 2 - 12px);
+}
+.read-resize.right {
+	left: calc(50% + var(--read-w) / 2 - 12px);
+}
+.read-resize::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 50%;
+	width: 2px;
+	transform: translateX(-50%);
+	background: transparent;
+	transition: background 0.12s ease;
+}
+.read-resize:hover::before,
+.read-resize:focus-visible::before,
+.read-resize.dragging::before {
+	background: var(--accent);
+}
+.read-resize:focus-visible {
+	outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.read-resize::before {
+		transition: none;
+	}
+}
+@media (max-width: 880px) {
+	.read-resize {
+		display: none;
+	}
 }
 /* Drag handle straddling the sidebar's right edge (resize the nav). */
 .sidebar-resize {
@@ -188,10 +295,15 @@ input:focus-visible {
 .content {
 	min-width: 0;
 }
+/* The reading card: centred in the viewport, subtly bordered, width = --read-w
+   (resizable via the edge grips). Always centred regardless of sidebar/TOC state. */
 .page {
-	max-width: var(--maxw);
-	margin: 0 auto;
-	padding: 3.2rem 2rem 6rem;
+	max-width: var(--read-w);
+	margin: 2rem auto 4rem;
+	padding: 3rem 2.4rem 3.5rem;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: 16px;
 }
 
 /* A2.3: mobile top bar + drawer (hidden on desktop) */
@@ -215,8 +327,14 @@ input:focus-visible {
 	.app-shell {
 		margin-left: 0;
 	}
+	/* Full-bleed reading on phones: drop the card framing entirely. */
 	.page {
+		margin: 0;
+		max-width: none;
 		padding: 1.6rem 1.1rem 4rem;
+		border: none;
+		border-radius: 0;
+		background: transparent;
 	}
 
 	.mobile-bar {
@@ -435,19 +553,25 @@ input:focus-visible {
 	line-height: 1.2;
 	margin: 0.2rem 0 0.6rem;
 	letter-spacing: -0.01em;
+	text-wrap: balance; /* even heading lines, no single-word last line */
 }
 .prose h2 {
 	font-size: 1.4rem;
 	margin: 2.4rem 0 0.8rem;
 	padding-bottom: 0.3rem;
 	border-bottom: 1px solid var(--border);
+	text-wrap: balance;
 }
 .prose h3 {
 	font-size: 1.12rem;
 	margin: 1.8rem 0 0.5rem;
+	text-wrap: balance;
 }
 .prose p {
-	margin: 0.8rem 0;
+	/* Bottom-only rhythm: ~0.8 line of air between paragraphs so blocks read as
+	   distinct chunks; heading margins still own heading↔text spacing. */
+	margin: 0 0 1.15rem;
+	text-wrap: pretty; /* avoid orphans / ragged short last lines */
 }
 .prose ul,
 .prose ol {
@@ -455,6 +579,7 @@ input:focus-visible {
 }
 .prose li {
 	margin: 0.35rem 0;
+	text-wrap: pretty;
 }
 .prose strong {
 	font-weight: 650;
@@ -839,21 +964,22 @@ html[data-theme='dark'] .shiki span {
 	display: none;
 }
 
-/* Wide screens: room for a right-hand sticky rail beside the 760px measure. */
-@media (min-width: 1180px) {
-	.lesson-layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 220px;
-		gap: 2rem;
-		max-width: calc(var(--maxw) + 220px + 2rem);
-		margin: 0 auto;
+/* Wide screens: the TOC floats in the right gutter, pinned relative to the
+   centred card's right edge (50% + half the card width). It is NOT part of the
+   card's flow, so showing/hiding it never moves the text — the card stays
+   centred in every combination of sidebar and TOC state. */
+@media (min-width: 1200px) {
+	.toc-inline {
+		display: none; /* the rail replaces the inline TOC on wide screens */
 	}
-	/* Hidden rail: collapse to a single column capped at the reading measure and
-	   re-center it, so the text pane stays centered instead of stretching to fill
-	   the full (content + rail) band and listing to one side. */
-	.lesson-layout.toc-hidden {
-		grid-template-columns: minmax(0, 1fr);
-		max-width: var(--maxw);
+	.toc-rail {
+		display: block;
+		position: fixed;
+		top: 5.2rem;
+		left: calc(50% + var(--read-w) / 2 + 1.5rem);
+		width: 190px;
+		max-height: calc(100vh - 7rem);
+		overflow-y: auto;
 	}
 	.lesson-layout.toc-hidden .toc-rail {
 		display: none;
@@ -863,7 +989,7 @@ html[data-theme='dark'] .shiki span {
 		align-items: center;
 		gap: 0.3rem;
 		position: fixed;
-		top: 1.4rem;
+		top: 0.8rem;
 		right: 1rem;
 		z-index: 40;
 		padding: 0.4rem 0.7rem;
@@ -877,23 +1003,6 @@ html[data-theme='dark'] .shiki span {
 	}
 	.toc-show-tab:hover {
 		border-color: var(--accent);
-	}
-	.lesson-page {
-		max-width: none;
-		margin: 0;
-		padding-right: 0;
-	}
-	.toc-rail {
-		display: block;
-		position: sticky;
-		top: 2rem;
-		align-self: start;
-		max-height: calc(100vh - 4rem);
-		overflow-y: auto;
-		padding: 2.4rem 0 0;
-	}
-	.toc-inline {
-		display: none; /* rail replaces the inline TOC on wide screens */
 	}
 }
 
