@@ -215,9 +215,6 @@ input:focus-visible {
 	font: inherit;
 	color: inherit;
 }
-.read-resize.left {
-	left: calc(50% - var(--read-w) / 2 - 12px);
-}
 .read-resize.right {
 	left: calc(50% + var(--read-w) / 2 - 12px);
 }
@@ -256,8 +253,10 @@ input:focus-visible {
 	top: 0;
 	bottom: 0;
 	left: var(--sidebar-w);
-	width: 9px;
-	margin-left: -4px;
+	/* 24px straddling hit area (WCAG 2.5.8 target size); the visible line is
+	   drawn thin via the dragging state — the wide strip is transparent. */
+	width: 24px;
+	margin-left: -12px;
 	z-index: 35;
 	cursor: col-resize;
 	touch-action: none;

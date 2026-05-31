@@ -169,23 +169,10 @@
 	</div>
 </div>
 
-<!-- Reading-width grips: one at each edge of the centred card. Dragging either
-     resizes the card symmetrically around the viewport centre, so it stays put. -->
-<button
-	type="button"
-	class="read-resize left"
-	class:dragging={readDragging}
-	role="slider"
-	aria-orientation="vertical"
-	aria-label="Resize reading width"
-	aria-valuenow={readW}
-	aria-valuemin={READ_MIN}
-	aria-valuemax={READ_MAX}
-	onpointerdown={readDown}
-	onpointermove={readMove}
-	onpointerup={readUp}
-	onkeydown={readKeydown}
-></button>
+<!-- Reading-width grip at the card's right edge. Dragging resizes the card
+     symmetrically around the viewport centre, so it stays put. One grip is
+     enough (the drag is symmetric); a left mirror would sit atop the sidebar
+     resize handle and fail target-size. -->
 <button
 	type="button"
 	class="read-resize right"

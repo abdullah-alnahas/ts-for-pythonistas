@@ -54,6 +54,8 @@
 	}
 	.cc-spine {
 		font-size: 0.8rem;
-		opacity: 0.7;
+		/* Solid muted token (AA ≥4.5:1) instead of opacity, which dropped the
+		   ratio to 3.4 and failed Lighthouse color-contrast. */
+		color: var(--fg-muted);
 	}
 </style>

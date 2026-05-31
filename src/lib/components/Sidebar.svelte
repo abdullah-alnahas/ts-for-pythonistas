@@ -102,7 +102,7 @@
 		class="hamburger"
 		aria-expanded={navOpen}
 		aria-controls="primary-nav"
-		aria-label={navOpen ? 'Close navigation' : 'Open navigation'}
+		aria-label={navOpen ? 'Close menu' : 'Open menu'}
 		onclick={() => (navOpen = !navOpen)}
 	>
 		{navOpen ? '✕' : '☰'} Menu
@@ -216,7 +216,8 @@
 		font-size: 0.7rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		opacity: 0.6;
+		/* Solid muted token (AA) rather than opacity, which failed contrast. */
+		color: var(--fg-muted);
 	}
 	.course-switch-link {
 		font-size: 0.78rem;
