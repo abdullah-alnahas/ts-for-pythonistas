@@ -2,29 +2,51 @@
 	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { lessons, type Lesson } from '$lib/content';
+	import { COURSES, getCourseBySlug, getCourseById, type CourseId } from '$lib/courses';
 	import { hydrateProgress, courseDone, courseLast } from '$lib/progress.svelte';
+	import type { Lesson } from '$lib/parse-course';
 
-	hydrateProgress('classic');
+	// Derive the active course from the URL — first path segment after base.
+	const activeCourse = $derived.by(() => {
+		const path = page.url.pathname.slice(base.length).replace(/^\//, '');
+		const seg = path.split('/')[0];
+		return getCourseBySlug(seg) ?? getCourseById('classic');
+	});
+
+	$effect(() => {
+		hydrateProgress(activeCourse.id);
+	});
+
+	const done = $derived(courseDone(activeCourse.id));
+	const lessons = $derived(activeCourse.lessons);
+
+	// Helpers for lesson and home links — course-prefixed for AK courses.
+	const lessonHref = (slug: string) =>
+		activeCourse.id === 'classic'
+			? `${base}/lesson/${slug}`
+			: `${base}/${activeCourse.routeSlug}/lesson/${slug}`;
+
+	const homeHref = $derived(
+		activeCourse.id === 'classic' ? `${base}/` : `${base}/${activeCourse.routeSlug}`
+	);
 
 	let q = $state('');
 	function submitSearch(e: SubmitEvent) {
 		e.preventDefault();
-		goto(`${base}/search${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`);
+		const courseParam =
+			activeCourse.id !== 'classic' ? `&course=${activeCourse.routeSlug}` : '';
+		goto(
+			`${base}/search${q.trim() ? `?q=${encodeURIComponent(q.trim())}${courseParam}` : courseParam ? `?${courseParam.slice(1)}` : ''}`
+		);
 	}
 
-	// A2.2: group lessons into named phases (Miller / chunking / serial position).
-	const PHASES: { label: string; range: [number, number] }[] = [
-		{ label: 'Foundations', range: [1, 4] },
-		{ label: 'The Type System', range: [5, 8] },
-		{ label: 'Functions & Classes', range: [9, 10] },
-		{ label: 'Advanced & JS Reality', range: [11, 12] }
-	];
 	const phases = $derived(
-		PHASES.map((p) => ({
-			label: p.label,
-			items: lessons.filter((l) => l.order >= p.range[0] && l.order <= p.range[1])
-		})).filter((p) => p.items.length > 0)
+		activeCourse.phases
+			.map((p) => ({
+				label: p.label,
+				items: lessons.filter((l) => l.order >= p.range[0] && l.order <= p.range[1])
+			}))
+			.filter((p) => p.items.length > 0)
 	);
 
 	// A2.3: mobile drawer open/close (only affects <880px via CSS).
@@ -35,7 +57,9 @@
 
 	// A2.4: resume affordance — last viewed lesson.
 	const lastLesson = $derived<Lesson | undefined>(
-		courseLast('classic') ? lessons.find((l) => l.slug === courseLast('classic')?.slug) : undefined
+		courseLast(activeCourse.id)
+			? lessons.find((l) => l.slug === courseLast(activeCourse.id)?.slug)
+			: undefined
 	);
 
 	let theme = $state<'auto' | 'light' | 'dark'>('auto');
@@ -57,12 +81,12 @@
 		}
 	}
 
-	const doneCount = $derived(lessons.filter((l) => courseDone('classic')[l.slug]).length);
+	const doneCount = $derived(lessons.filter((l) => done[l.slug]).length);
 </script>
 
 <!-- A2.3: mobile top bar with hamburger (visible only <880px) -->
 <div class="mobile-bar">
-	<a class="brand mobile-brand" href="{base}/" onclick={closeNav}>
+	<a class="brand mobile-brand" href={homeHref} onclick={closeNav}>
 		<span class="brand-py">Py</span><span class="brand-arrow">→</span><span class="brand-ts">TS</span>
 	</a>
 	<button
@@ -89,12 +113,28 @@
 		<div class="progress-fill" style="width: {(doneCount / lessons.length) * 100}%"></div>
 	</div>
 
+	<label class="course-switch">
+		<span class="sr-only">Course</span>
+		<select
+			value={activeCourse.id}
+			onchange={(e) => {
+				const c = getCourseById(e.currentTarget.value as CourseId);
+				localStorage.setItem('ts-learn:course', c.id);
+				goto(c.id === 'classic' ? `${base}/` : `${base}/${c.routeSlug}`);
+			}}
+		>
+			{#each COURSES as c}
+				<option value={c.id}>{c.title}</option>
+			{/each}
+		</select>
+	</label>
+
 	<form class="side-search" onsubmit={submitSearch}>
 		<input type="search" placeholder="Search lessons…" bind:value={q} aria-label="Search lessons" />
 	</form>
 
 	{#if lastLesson}
-		<a class="resume-link" href="{base}/lesson/{lastLesson.slug}" onclick={closeNav}>
+		<a class="resume-link" href={lessonHref(lastLesson.slug)} onclick={closeNav}>
 			<span class="resume-eyebrow">Continue where you left off</span>
 			<span class="resume-title">{lastLesson.title}</span>
 		</a>
@@ -118,7 +158,7 @@
 	</div>
 
 	<div class="sidebar-group">
-		<a class="about-link" href="{base}/" class:active={page.url.pathname === `${base}/`} onclick={closeNav}>
+		<a class="about-link" href={homeHref} class:active={page.url.pathname === homeHref} onclick={closeNav}>
 			<span class="num">✦</span><span class="lbl">About this course</span>
 		</a>
 	</div>
@@ -128,9 +168,9 @@
 			<div class="sidebar-group-label">{phase.label}</div>
 			{#each phase.items as l}
 				<a
-					href="{base}/lesson/{l.slug}"
-					class:active={page.url.pathname === `${base}/lesson/${l.slug}`}
-					class:done={courseDone('classic')[l.slug]}
+					href={lessonHref(l.slug)}
+					class:active={page.url.pathname === lessonHref(l.slug)}
+					class:done={done[l.slug]}
 					onclick={closeNav}
 				>
 					<span class="num">{String(l.order).padStart(2, '0')}</span>
