@@ -9,7 +9,7 @@
 	import { toggleDone, hydrateProgress, setLastViewed, isDone, doneCount as getDoneCount } from '$lib/progress.svelte';
 
 	let { data } = $props();
-	hydrateProgress(data.courseId);
+	$effect(() => hydrateProgress(data.courseId));
 
 	const courseId = $derived(data.courseId);
 	const courseSlug = $derived(data.courseSlug);

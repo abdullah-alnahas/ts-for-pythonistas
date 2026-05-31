@@ -4,7 +4,7 @@
 	import { hydrateProgress, courseDone, courseLast } from '$lib/progress.svelte';
 
 	let { data } = $props();
-	hydrateProgress(data.courseId);
+	$effect(() => hydrateProgress(data.courseId));
 	const done = $derived(courseDone(data.courseId));
 	const doneCount = $derived(data.lessons.filter((l) => done[l.slug]).length);
 	const last = $derived(courseLast(data.courseId));
