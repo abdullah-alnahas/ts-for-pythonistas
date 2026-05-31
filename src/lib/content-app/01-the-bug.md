@@ -161,23 +161,24 @@ Here is the broken version, end to end, the way it actually fails. Run it and wa
 
 :::play
 ```typescript
-// The original app plus one ordinary typo. This RUNS (it is valid
-// JavaScript); the bug is in the data, and it surfaces far from its cause.
-let tasks: { id: number; title?: string; done: boolean }[] = [];
+// The original app plus one ordinary typo. This is essentially the
+// pre-types state: tasks is an untyped array, so the wrong-shape object
+// compiles without complaint and the bug reaches runtime silently.
+let tasks: any[] = [];
 
 function addTask(title: string) {
   tasks.push({ id: tasks.length + 1, title, done: false });
 }
 function addTaskWrong(text: string) {
-  // the typo: writes `text`, never sets `title`
-  tasks.push({ id: tasks.length + 1, done: false } as never);
+  // the typo: writes `text`, never sets `title` — and nothing stops it
+  tasks.push({ id: tasks.length + 1, text, done: false });
 }
 
 addTask("write the intro");
 addTaskWrong("file the taxes");
 
-function render(task: { title?: string }) {
-  return task.title!.toUpperCase(); // crashes on the second task
+function render(task: any) {
+  return task.title.toUpperCase(); // crashes on the second task
 }
 
 console.log(render(tasks[0])); // WRITE THE INTRO
