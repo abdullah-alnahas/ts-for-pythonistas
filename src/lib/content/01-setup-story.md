@@ -168,7 +168,7 @@ That `bun` note generalizes, and the details matter. Bun and `tsx` strip types a
 
 ## The one setting that matters: `strict`
 
-A project's TypeScript behavior lives in `tsconfig.json` (compare `pyproject.toml`'s `[tool.mypy]`). There are many flags, but one decides whether the type system is useful:
+A project's TypeScript settings live in `tsconfig.json` — the rough equivalent of [[pyproject.toml]]'s [[tool.mypy|tool-mypy]] table. It has dozens of flags, but for learning the language exactly one matters. Turn it on and leave it on:
 
 ```json
 {
@@ -178,7 +178,23 @@ A project's TypeScript behavior lives in `tsconfig.json` (compare `pyproject.tom
 }
 ```
 
-`strict` enables the checks that give the type system its value — chiefly null safety (the source of every `AttributeError: 'NoneType' object has no attribute ...`; Lesson 06) and a ban on implicit `any`. With `strict` off, TypeScript infers `any` for anything it can't determine and passes nulls through unchecked, which types your code in name only. It's the equivalent of [[mypy]]'s `--strict`, and every example in this course assumes it's on. The habit worth keeping: start projects strict, and don't disable it to clear an error.
+`strict` is not a single check. It's a master switch that turns on the bundle of checks that make the type system worth having. Two of them carry most of the weight day to day:
+
+- **Null safety** (`strictNullChecks`). With it **off**, `string` silently includes `null` and `undefined`, and they slip through unnoticed — the exact setup behind Python's `AttributeError: 'NoneType' object has no attribute ...`. With it **on**, `null` must be written into the type or the compiler stops you (Lesson 06).
+- **No implicit `any`** (`noImplicitAny`). With it **off**, anything the compiler can't infer quietly becomes `any`, which switches checking *off* for that value and spreads from there. With it **on**, you have to say what you mean.
+
+So the difference is stark. With `strict` off, TypeScript still compiles, but it hands out `any` freely and lets nulls flow — you get the *syntax* of types with almost none of the *safety*. With it on, the compiler actually has your back. It's the same gap as plain [[mypy]] versus `mypy --strict`: one tool, very different guarantees. Every example in this course assumes `strict: true`. The one habit to keep: start strict, and never switch it off just to clear an error — fix the error instead.
+
+### A note on Python's type checkers
+
+One difference is worth setting straight, because it shapes the comparison throughout the course. TypeScript effectively has *one* type checker, `tsc`: the language and its checker ship together. Python's checker is a **separate, optional tool**, and there are several competing ones:
+
+- **[[mypy]]** — the original reference checker, and the one this course compares against by default.
+- **pyright** — Microsoft's, written in TypeScript; it's the engine inside Pylance (VS Code's Python support), and is fast and precise.
+- **pyre** (Meta) and **pytype** (Google) — built to check very large internal codebases.
+- **`ty`** — Astral's new checker (the `ruff` / `uv` team), written in Rust for speed; young but moving quickly.
+
+They mostly agree, but differ in inference, speed, and how strict they are out of the box. Like `tsc`, none of them stops `python` from running — they only report. And all of them are gradual and [[soundness vs completeness|soundness-vs-completeness]] unsound by design, which is why this course keeps saying the checker gives you advice, not a proof.
 
 ## Recap
 
