@@ -62,9 +62,10 @@ function checkObject(shape: Shape): Checker {
     if (typeof value !== "object" || value === null) {
       return err(`expected object, got ${value === null ? "null" : typeof value}`);
     }
+    const obj = value as Record<string, unknown>;
     // Guard 2: check each field against its checker.
-    for (const key in shape) {
-      const fieldResult = shape[key]((value as Record<string, unknown>)[key]);
+    for (const [key, check] of Object.entries(shape)) {
+      const fieldResult = check(obj[key]);
       if (!fieldResult.ok) {
         return err(`field "${key}": ${fieldResult.error}`);
       }
@@ -85,7 +86,7 @@ console.log(checkTask(null));                               // expected object, 
 
 Walk the mechanism, because every line earns its place. The guard does two jobs: `typeof value !== "object"` rejects primitives, and `value === null` rejects `null` — the wart from Episode 1, where `typeof null` lies and returns `"object"`. If we trusted `typeof` alone, `null` would slip past the guard and crash on field access. We handle it explicitly, exactly as promised.
 
-Then the loop. For each field name in the *shape*, we pull that field's checker (`shape[key]`) and run it against the corresponding field of the *value* (`value[key]`). If any field fails, we return early with a message naming the field. If they all pass, the object passes. The `value as Record<string, unknown>` is a cast: we've proven at runtime that `value` is a non-null object, but the compiler still types it `object`, which has no indexable keys — so we tell it "treat this as a string-keyed bag of unknowns." The fields come out as `unknown`, which is exactly right: each field checker re-establishes the type of its own field. We never assume; we check, one field at a time.
+Then the loop. We walk the *shape's* entries — `Object.entries(shape)` hands us each field name and its checker as a pair — and run that checker against the corresponding field of the *value* (`obj[key]`). If any field fails, we return early with a message naming the field. If they all pass, the object passes. The `value as Record<string, unknown>` is a cast: we've proven at runtime that `value` is a non-null object, but the compiler still types it `object`, which has no indexable keys — so we tell it "treat this as a string-keyed bag of unknowns." The fields come out as `unknown`, which is exactly right: each field checker re-establishes the type of its own field. We never assume; we check, one field at a time.
 
 Notice the missing-field case: `checkTask({ title: "buy milk" })` fails on `done`, because reading a missing key yields `undefined`, and `checkBoolean(undefined)` is `false`. A missing field and a field of the wrong kind fail the same way — which is correct for now. Episode 6 is where we'll care about the difference between "absent" and "present but wrong," when we model optional fields.
 
@@ -152,8 +153,9 @@ const checkNumber: Checker = (v) => typeof v === "number" ? ok() : err("expected
 function checkObject(shape: Record<string, Checker>): Checker {
   return (value) => {
     if (typeof value !== "object" || value === null) return err("expected object");
-    for (const key in shape) {
-      const r = shape[key]((value as Record<string, unknown>)[key]);
+    const obj = value as Record<string, unknown>;
+    for (const [key, check] of Object.entries(shape)) {
+      const r = check(obj[key]);
       if (!r.ok) return err(`field "${key}": ${r.error}`);
     }
     return ok();

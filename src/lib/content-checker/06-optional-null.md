@@ -90,8 +90,9 @@ const checkBoolean: Checker = (v) => typeof v === "boolean" ? ok() : err("expect
 function checkObject(shape: Record<string, Checker>): Checker {
   return (value) => {
     if (typeof value !== "object" || value === null) return err("expected object");
-    for (const k in shape) {
-      const r = shape[k]((value as Record<string, unknown>)[k]);
+    const obj = value as Record<string, unknown>;
+    for (const [k, check] of Object.entries(shape)) {
+      const r = check(obj[k]);
       if (!r.ok) return err(`field "${k}": ${r.error}`);
     }
     return ok();
