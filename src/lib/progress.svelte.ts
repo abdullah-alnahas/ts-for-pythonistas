@@ -1,26 +1,37 @@
-// Per-lesson "done" state + resume affordance, persisted to localStorage.
-// Svelte 5 runes module.
-const KEY = 'tsfp-progress';
-const LAST_KEY = 'tsfp-last';
+// Per-course, per-lesson "done" state + resume affordance, persisted to
+// localStorage. Svelte 5 runes module.
+import type { CourseId } from '$lib/courses';
 
-function load(): Record<string, boolean> {
+export interface LastViewed {
+	slug: string;
+	scrollY: number;
+}
+
+interface CourseProgress {
+	done: Record<string, boolean>;
+	last: LastViewed | null;
+}
+
+/** Classic keeps its original unprefixed keys; AK courses are namespaced. */
+export function storageKeys(courseId: CourseId): { done: string; last: string } {
+	return courseId === 'classic'
+		? { done: 'tsfp-progress', last: 'tsfp-last' }
+		: { done: `tsfp-progress:${courseId}`, last: `tsfp-last:${courseId}` };
+}
+
+function loadDone(courseId: CourseId): Record<string, boolean> {
 	if (typeof localStorage === 'undefined') return {};
 	try {
-		return JSON.parse(localStorage.getItem(KEY) ?? '{}');
+		return JSON.parse(localStorage.getItem(storageKeys(courseId).done) ?? '{}');
 	} catch {
 		return {};
 	}
 }
 
-interface LastViewed {
-	slug: string;
-	scrollY: number;
-}
-
-function loadLast(): LastViewed | null {
+function loadLast(courseId: CourseId): LastViewed | null {
 	if (typeof localStorage === 'undefined') return null;
 	try {
-		const raw = localStorage.getItem(LAST_KEY);
+		const raw = localStorage.getItem(storageKeys(courseId).last);
 		if (!raw) return null;
 		const v = JSON.parse(raw) as Partial<LastViewed>;
 		if (typeof v.slug !== 'string') return null;
@@ -30,43 +41,45 @@ function loadLast(): LastViewed | null {
 	}
 }
 
-export const progress = $state<{ done: Record<string, boolean>; last: LastViewed | null }>({
-	done: {},
-	last: null
-});
+export const progress = $state<{ courses: Record<string, CourseProgress> }>({ courses: {} });
 
-let hydrated = false;
-
-export function hydrateProgress(): void {
-	if (hydrated) return;
-	progress.done = load();
-	progress.last = loadLast();
-	hydrated = true;
+function slot(courseId: CourseId): CourseProgress {
+	return (progress.courses[courseId] ??= { done: {}, last: null });
 }
 
-export function toggleDone(slug: string): void {
-	progress.done = { ...progress.done, [slug]: !progress.done[slug] };
+export function hydrateProgress(courseId: CourseId = 'classic'): void {
+	if (progress.courses[courseId]) return;
+	progress.courses[courseId] = { done: loadDone(courseId), last: loadLast(courseId) };
+}
+
+export function courseDone(courseId: CourseId): Record<string, boolean> {
+	return slot(courseId).done;
+}
+
+export function courseLast(courseId: CourseId): LastViewed | null {
+	return slot(courseId).last;
+}
+
+export function toggleDone(courseId: CourseId, slug: string): void {
+	const s = slot(courseId);
+	s.done = { ...s.done, [slug]: !s.done[slug] };
 	if (typeof localStorage !== 'undefined') {
-		localStorage.setItem(KEY, JSON.stringify(progress.done));
+		localStorage.setItem(storageKeys(courseId).done, JSON.stringify(s.done));
 	}
 }
 
-export function isDone(slug: string): boolean {
-	return !!progress.done[slug];
+export function isDone(courseId: CourseId, slug: string): boolean {
+	return !!slot(courseId).done[slug];
 }
 
-export function doneCount(): number {
-	return Object.values(progress.done).filter(Boolean).length;
+export function doneCount(courseId: CourseId): number {
+	return Object.values(slot(courseId).done).filter(Boolean).length;
 }
 
-/** A2.4: record the last lesson the user viewed and their scroll position. */
-export function setLastViewed(slug: string, scrollY: number): void {
-	progress.last = { slug, scrollY };
+export function setLastViewed(courseId: CourseId, slug: string, scrollY: number): void {
+	const s = slot(courseId);
+	s.last = { slug, scrollY };
 	if (typeof localStorage !== 'undefined') {
-		localStorage.setItem(LAST_KEY, JSON.stringify(progress.last));
+		localStorage.setItem(storageKeys(courseId).last, JSON.stringify(s.last));
 	}
-}
-
-export function getLastViewed(): LastViewed | null {
-	return progress.last;
 }

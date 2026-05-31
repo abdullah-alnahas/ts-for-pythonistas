@@ -2,13 +2,13 @@
 	// A2.5: course-completion finale — a real "you're done" peak (Peak-End).
 	import { base } from '$app/paths';
 	import { lessons } from '$lib/content';
-	import { progress, hydrateProgress } from '$lib/progress.svelte';
+	import { hydrateProgress, courseDone } from '$lib/progress.svelte';
 
-	hydrateProgress();
-	const doneCount = $derived(lessons.filter((l) => progress.done[l.slug]).length);
+	hydrateProgress('classic');
+	const doneCount = $derived(lessons.filter((l) => courseDone('classic')[l.slug]).length);
 	const total = lessons.length;
 	const complete = $derived(doneCount >= total);
-	const remaining = $derived(lessons.filter((l) => !progress.done[l.slug]));
+	const remaining = $derived(lessons.filter((l) => !courseDone('classic')[l.slug]));
 </script>
 
 <svelte:head>

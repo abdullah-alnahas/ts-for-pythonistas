@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { lessons } from '$lib/content';
-	import { progress, hydrateProgress } from '$lib/progress.svelte';
+	import { hydrateProgress, courseDone, courseLast } from '$lib/progress.svelte';
 
-	hydrateProgress();
+	hydrateProgress('classic');
 	const first = lessons[0];
-	const doneCount = $derived(lessons.filter((l) => progress.done[l.slug]).length);
+	const done = $derived(courseDone('classic'));
+	const last = $derived(courseLast('classic'));
+	const doneCount = $derived(lessons.filter((l) => done[l.slug]).length);
 	const complete = $derived(doneCount >= lessons.length);
 	// A2.4: resume target — last viewed, else first unfinished, else first.
 	const resume = $derived(
-		(progress.last && lessons.find((l) => l.slug === progress.last?.slug)) ??
-			lessons.find((l) => !progress.done[l.slug]) ??
+		(last && lessons.find((l) => l.slug === last?.slug)) ??
+			lessons.find((l) => !done[l.slug]) ??
 			first
 	);
 </script>
@@ -47,7 +49,7 @@
 		<h2>The roadmap</h2>
 		<ol class="roadmap">
 			{#each lessons as l}
-				<li class:done={progress.done[l.slug]}>
+				<li class:done={done[l.slug]}>
 					<a href="{base}/lesson/{l.slug}">
 						<span class="r-num">{String(l.order).padStart(2, '0')}</span>
 						<span class="r-body">

@@ -6,15 +6,15 @@
 	import Exercises from '$lib/components/Exercises.svelte';
 	import LeetCode from '$lib/components/LeetCode.svelte';
 	import Toc from '$lib/components/Toc.svelte';
-	import { progress, toggleDone, hydrateProgress, setLastViewed } from '$lib/progress.svelte';
+	import { toggleDone, hydrateProgress, setLastViewed, isDone, doneCount as getDoneCount } from '$lib/progress.svelte';
 
 	let { data } = $props();
-	hydrateProgress();
+	hydrateProgress('classic');
 
 	const lesson = $derived(data.lesson);
-	const done = $derived(!!progress.done[lesson.slug]);
+	const done = $derived(isDone('classic', lesson.slug));
 	const totalLessons = $derived(data.totalLessons);
-	const doneCount = $derived(Object.values(progress.done).filter(Boolean).length);
+	const doneCount = $derived(getDoneCount('classic'));
 
 	let article = $state<HTMLElement | null>(null);
 	let justCompleted = $state(false);
@@ -29,8 +29,8 @@
 	}
 
 	function markDone() {
-		const wasDone = !!progress.done[lesson.slug];
-		toggleDone(lesson.slug);
+		const wasDone = isDone('classic', lesson.slug);
+		toggleDone('classic', lesson.slug);
 		// A1.8: celebratory beat only when transitioning to done.
 		justCompleted = !wasDone;
 	}
@@ -45,7 +45,7 @@
 			lastSeenSlug = slug;
 			untrack(() => {
 				justCompleted = false;
-				setLastViewed(slug, 0); // record arrival; scroll updates below
+				setLastViewed('classic', slug, 0); // record arrival; scroll updates below
 			});
 		}
 	});
@@ -57,7 +57,7 @@
 		let raf = 0;
 		function onScroll() {
 			cancelAnimationFrame(raf);
-			raf = requestAnimationFrame(() => setLastViewed(lesson.slug, window.scrollY));
+			raf = requestAnimationFrame(() => setLastViewed('classic', lesson.slug, window.scrollY));
 		}
 		window.addEventListener('scroll', onScroll, { passive: true });
 		return () => {

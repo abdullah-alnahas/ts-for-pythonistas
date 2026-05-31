@@ -3,9 +3,9 @@
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { lessons, type Lesson } from '$lib/content';
-	import { progress, hydrateProgress } from '$lib/progress.svelte';
+	import { hydrateProgress, courseDone, courseLast } from '$lib/progress.svelte';
 
-	hydrateProgress();
+	hydrateProgress('classic');
 
 	let q = $state('');
 	function submitSearch(e: SubmitEvent) {
@@ -35,7 +35,7 @@
 
 	// A2.4: resume affordance — last viewed lesson.
 	const lastLesson = $derived<Lesson | undefined>(
-		progress.last ? lessons.find((l) => l.slug === progress.last?.slug) : undefined
+		courseLast('classic') ? lessons.find((l) => l.slug === courseLast('classic')?.slug) : undefined
 	);
 
 	let theme = $state<'auto' | 'light' | 'dark'>('auto');
@@ -57,7 +57,7 @@
 		}
 	}
 
-	const doneCount = $derived(lessons.filter((l) => progress.done[l.slug]).length);
+	const doneCount = $derived(lessons.filter((l) => courseDone('classic')[l.slug]).length);
 </script>
 
 <!-- A2.3: mobile top bar with hamburger (visible only <880px) -->
@@ -130,7 +130,7 @@
 				<a
 					href="{base}/lesson/{l.slug}"
 					class:active={page.url.pathname === `${base}/lesson/${l.slug}`}
-					class:done={progress.done[l.slug]}
+					class:done={courseDone('classic')[l.slug]}
 					onclick={closeNav}
 				>
 					<span class="num">{String(l.order).padStart(2, '0')}</span>
