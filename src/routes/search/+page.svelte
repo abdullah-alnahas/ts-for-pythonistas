@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { search, type SearchHit } from '$lib/search';
+	import { search, searchCourse, type SearchHit } from '$lib/search';
+	import { getCourseBySlug, getCourseById } from '$lib/courses';
 
 	// Seed initial query from ?q= so direct links (and the sidebar mini-search)
 	// land on results immediately, even with the input autofocused.
@@ -14,7 +16,21 @@
 		if (q !== query && document.activeElement?.tagName !== 'INPUT') query = q;
 	});
 
-	const results = $derived<SearchHit[]>(query.trim() ? search(query) : []);
+	// Resolve the course from ?course= param; fall back to classic.
+	const activeCourse = $derived.by(() => {
+		const courseSlug = page.url.searchParams.get('course') ?? '';
+		return getCourseBySlug(courseSlug) ?? getCourseById('classic');
+	});
+
+	const lessonHrefPrefix = $derived(
+		activeCourse.id === 'classic'
+			? `${base}/lesson`
+			: `${base}/${activeCourse.routeSlug}/lesson`
+	);
+
+	const results = $derived<SearchHit[]>(
+		query.trim() ? searchCourse(activeCourse.lessons, lessonHrefPrefix, query) : []
+	);
 
 	const SAMPLES = [
 		'discriminated union',

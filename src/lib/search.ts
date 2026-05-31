@@ -2,7 +2,8 @@
 // index (split on `## ` headings) at module load, strips markdown/code/custom
 // blocks to plain text, and ranks by term frequency with a heading boost.
 import { base } from '$app/paths';
-import { lessons } from './content';
+import type { Lesson } from '$lib/parse-course';
+import { lessons as classicLessons } from './content';
 import { entries as glossaryEntries } from './glossary';
 
 export type SearchKind = 'lesson' | 'glossary';
@@ -40,7 +41,7 @@ function stripMarkdown(md: string): string {
 		.trim();
 }
 
-const sections: Section[] = (() => {
+function buildSections(lessons: Lesson[], lessonHrefPrefix: string): Section[] {
 	const out: Section[] = [];
 	for (const l of lessons) {
 		for (const part of l.body.split(/\n(?=##\s)/)) {
@@ -50,7 +51,7 @@ const sections: Section[] = (() => {
 			if (!text) continue;
 			out.push({
 				kind: 'lesson',
-				href: `${base}/lesson/${l.slug}`,
+				href: `${lessonHrefPrefix}/${l.slug}`,
 				slug: l.slug,
 				lessonTitle: l.title,
 				lessonOrder: l.order,
@@ -76,7 +77,10 @@ const sections: Section[] = (() => {
 		});
 	}
 	return out;
-})();
+}
+
+// Default (classic) sections built at module load for backward compatibility.
+const defaultSections: Section[] = buildSections(classicLessons, `${base}/lesson`);
 
 function countOccurrences(haystack: string, needle: string): number {
 	let n = 0;
@@ -96,7 +100,7 @@ function snippet(text: string, term: string): string {
 	return (start > 0 ? '…' : '') + text.slice(start, end).trim() + (end < text.length ? '…' : '');
 }
 
-export function search(query: string): SearchHit[] {
+function runSearch(sections: Section[], query: string): SearchHit[] {
 	const terms = query
 		.toLowerCase()
 		.split(/\s+/)
@@ -127,4 +131,22 @@ export function search(query: string): SearchHit[] {
 		});
 	}
 	return hits.sort((a, b) => b.score - a.score).slice(0, 30);
+}
+
+/** Search across classic lessons + glossary (default, backward-compatible). */
+export function search(query: string): SearchHit[] {
+	return runSearch(defaultSections, query);
+}
+
+/**
+ * Search scoped to a specific set of lessons.
+ * Pass the lesson href prefix (e.g. `${base}/lesson` or `${base}/build-an-app/lesson`).
+ */
+export function searchCourse(
+	lessons: Lesson[],
+	lessonHrefPrefix: string,
+	query: string
+): SearchHit[] {
+	const sections = buildSections(lessons, lessonHrefPrefix);
+	return runSearch(sections, query);
 }
