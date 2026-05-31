@@ -2,13 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { COURSES, getCourseBySlug, getCourseById, courseNeighbors } from './courses';
 
 describe('course registry', () => {
-	it('has the four courses', () => {
-		expect(COURSES.map((c) => c.id).sort()).toEqual(['app', 'both', 'checker', 'classic']);
+	it('has the five courses', () => {
+		expect(COURSES.map((c) => c.id).sort()).toEqual([
+			'app',
+			'both',
+			'checker',
+			'classic',
+			'syntax'
+		]);
 	});
 	it('maps AK slugs to courses and classic to empty slug', () => {
 		expect(getCourseBySlug('build-an-app')?.id).toBe('app');
 		expect(getCourseBySlug('how-types-work')?.id).toBe('checker');
 		expect(getCourseBySlug('understand-and-build')?.id).toBe('both');
+		expect(getCourseBySlug('from-python')?.id).toBe('syntax');
 		expect(getCourseById('classic').routeSlug).toBe('');
 	});
 	it('returns undefined for unknown slugs', () => {

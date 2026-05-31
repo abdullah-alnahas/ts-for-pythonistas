@@ -3,8 +3,9 @@ import { lessons as classicLessons } from '$lib/content';
 import { lessons as appLessons } from '$lib/content-app';
 import { lessons as checkerLessons } from '$lib/content-checker';
 import { lessons as bothLessons } from '$lib/content-both';
+import { lessons as syntaxLessons } from '$lib/content-syntax';
 
-export type CourseId = 'classic' | 'app' | 'checker' | 'both';
+export type CourseId = 'classic' | 'app' | 'checker' | 'both' | 'syntax';
 
 export interface Phase {
 	label: string;
@@ -62,6 +63,19 @@ export const COURSES: Course[] = [
 		spine: 'Checker by hand (Act 1) coupled to the growing todo app (Act 2+).',
 		lessons: bothLessons,
 		phases: [{ label: 'Understand & Build', range: [1, 99] }]
+	},
+	{
+		id: 'syntax',
+		routeSlug: 'from-python',
+		title: 'Straight to Syntax',
+		tagline: 'You already know how to program. Here is how you write TypeScript.',
+		spine: 'One Python program, translated to idiomatic TS construct by construct.',
+		lessons: syntaxLessons,
+		phases: [
+			{ label: 'The Basics', range: [1, 4] },
+			{ label: 'Values & Types', range: [5, 10] },
+			{ label: 'Structure & Runtime', range: [11, 16] }
+		]
 	}
 ];
 
