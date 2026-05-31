@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { COURSES, getCourseBySlug, getCourseById, type CourseId } from '$lib/courses';
+	import { COURSES, getCourseBySlug, getCourseById } from '$lib/courses';
 	import { hydrateProgress, courseDone, courseLast } from '$lib/progress.svelte';
 	import type { Lesson } from '$lib/parse-course';
 
@@ -39,6 +39,15 @@
 			`${base}/search${q.trim() ? `?q=${encodeURIComponent(q.trim())}${courseParam}` : courseParam ? `?${courseParam.slice(1)}` : ''}`
 		);
 	}
+
+	const courseList = $derived(
+		COURSES.map((c) => ({
+			id: c.id,
+			title: c.title,
+			href: c.routeSlug === '' ? `${base}/` : `${base}/${c.routeSlug}`,
+			active: c.id === activeCourse.id
+		}))
+	);
 
 	const phases = $derived(
 		activeCourse.phases
@@ -113,21 +122,24 @@
 		<div class="progress-fill" style="width: {(doneCount / lessons.length) * 100}%"></div>
 	</div>
 
-	<label class="course-switch">
-		<span class="sr-only">Course</span>
-		<select
-			value={activeCourse.id}
-			onchange={(e) => {
-				const c = getCourseById(e.currentTarget.value as CourseId);
-				localStorage.setItem('ts-learn:course', c.id);
-				goto(c.id === 'classic' ? `${base}/` : `${base}/${c.routeSlug}`);
-			}}
-		>
-			{#each COURSES as c}
-				<option value={c.id}>{c.title}</option>
-			{/each}
-		</select>
-	</label>
+	<nav class="course-switch" aria-label="Choose a course">
+		<span class="course-switch-label">Course</span>
+		{#each courseList as c}
+			<a
+				class="course-switch-link"
+				class:active={c.active}
+				aria-current={c.active ? 'page' : undefined}
+				href={c.href}
+				onclick={() => {
+					try {
+						localStorage.setItem('ts-learn:course', c.id);
+					} catch {
+						/* ignore */
+					}
+				}}>{c.title}</a
+			>
+		{/each}
+	</nav>
 
 	<form class="side-search" onsubmit={submitSearch}>
 		<input type="search" placeholder="Search lessons…" bind:value={q} aria-label="Search lessons" />
@@ -190,3 +202,39 @@
 		<p class="muted small">For Python developers learning TypeScript.</p>
 	</div>
 </nav>
+
+<style>
+	.course-switch {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		align-items: center;
+		margin: 0.25rem 0 0.75rem;
+	}
+	.course-switch-label {
+		width: 100%;
+		font-size: 0.7rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		opacity: 0.6;
+	}
+	.course-switch-link {
+		font-size: 0.78rem;
+		line-height: 1.1;
+		padding: 0.25rem 0.5rem;
+		border: 1px solid var(--border, #d0d7de);
+		border-radius: 999px;
+		text-decoration: none;
+		color: inherit;
+		opacity: 0.8;
+	}
+	.course-switch-link:hover {
+		opacity: 1;
+	}
+	.course-switch-link.active {
+		border-color: var(--accent, #0969da);
+		color: var(--accent, #0969da);
+		opacity: 1;
+		font-weight: 600;
+	}
+</style>

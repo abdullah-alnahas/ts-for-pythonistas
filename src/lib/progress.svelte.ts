@@ -43,7 +43,13 @@ function loadLast(courseId: CourseId): LastViewed | null {
 
 export const progress = $state<{ courses: Record<string, CourseProgress> }>({ courses: {} });
 
-function slot(courseId: CourseId): CourseProgress {
+// Stable empty default returned by reads before a course is hydrated. Reads MUST
+// be pure: creating the slot here would mutate $state, which is illegal inside a
+// `$derived`/template expression (the read functions are called from both).
+const EMPTY_DONE: Record<string, boolean> = {};
+
+/** Mutating slot accessor — only call from event handlers / hydrate, never a read. */
+function ensureSlot(courseId: CourseId): CourseProgress {
 	return (progress.courses[courseId] ??= { done: {}, last: null });
 }
 
@@ -53,15 +59,15 @@ export function hydrateProgress(courseId: CourseId = 'classic'): void {
 }
 
 export function courseDone(courseId: CourseId): Record<string, boolean> {
-	return slot(courseId).done;
+	return progress.courses[courseId]?.done ?? EMPTY_DONE;
 }
 
 export function courseLast(courseId: CourseId): LastViewed | null {
-	return slot(courseId).last;
+	return progress.courses[courseId]?.last ?? null;
 }
 
 export function toggleDone(courseId: CourseId, slug: string): void {
-	const s = slot(courseId);
+	const s = ensureSlot(courseId);
 	s.done = { ...s.done, [slug]: !s.done[slug] };
 	if (typeof localStorage !== 'undefined') {
 		localStorage.setItem(storageKeys(courseId).done, JSON.stringify(s.done));
@@ -69,15 +75,15 @@ export function toggleDone(courseId: CourseId, slug: string): void {
 }
 
 export function isDone(courseId: CourseId, slug: string): boolean {
-	return !!slot(courseId).done[slug];
+	return !!progress.courses[courseId]?.done[slug];
 }
 
 export function doneCount(courseId: CourseId): number {
-	return Object.values(slot(courseId).done).filter(Boolean).length;
+	return Object.values(progress.courses[courseId]?.done ?? EMPTY_DONE).filter(Boolean).length;
 }
 
 export function setLastViewed(courseId: CourseId, slug: string, scrollY: number): void {
-	const s = slot(courseId);
+	const s = ensureSlot(courseId);
 	s.last = { slug, scrollY };
 	if (typeof localStorage !== 'undefined') {
 		localStorage.setItem(storageKeys(courseId).last, JSON.stringify(s.last));
