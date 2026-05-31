@@ -76,13 +76,10 @@ interface Named { name: string }
 
 const user = { name: "Ada", age: 36, admin: true };
 const n: Named = user; // ok — user has name, plus extras Named ignores
-
-function greet(x: Named): string { return x.name; }
-console.log(greet(user)); // "Ada"
 ```
 :::
 
-Try the opposite direction in that playground: delete `name` from `user`, and the assignment to `n` breaks, because the value no longer has at least what `Named` requires. The asymmetry is the whole point. A requirement of "has a `name`" is satisfied by anything carrying a `name` and more; it is not satisfied by something carrying less.
+Try the opposite direction in that playground: delete `name` from `user`, and the assignment to `n` breaks, because the value no longer has at least what `Named` requires. The error reads `Property 'name' is missing in type '{ age: number; admin: boolean }' but required in type 'Named'`. The asymmetry is the whole point. A requirement of "has a `name`" is satisfied by anything carrying a `name` and more; it is not satisfied by something carrying less.
 
 ```
   requires: Named              candidate value

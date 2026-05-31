@@ -224,6 +224,7 @@ The non-null assertion `!` tells the compiler a value isn't `null` or `undefined
 ```typescript
 const el = document.getElementById("missing")!;  // typed HTMLElement
 el.classList.add("x");  // compiles cleanly; throws at runtime if the element wasn't found
+                        // TypeError: Cannot read properties of null (reading 'classList')
 ```
 
 The honest Python analogue is `# type: ignore` on the line, or a bare `cast(User, x)`: you're overriding the checker's judgment with your own, and you own the consequences. It's occasionally the right call — a value you initialize lazily, an invariant the type system can't express — but it's a debt, not a fix. A real guard (`if (el)`) or a fallback (`?? defaultEl`) keeps the check; `!` deletes it. When you find yourself reaching for `!`, the question to ask is whether you actually know the value is present or are merely tired of the error.
@@ -231,6 +232,12 @@ The honest Python analogue is `# type: ignore` on the line, or a bare `cast(User
 ## `void` is not `undefined`
 
 One last distinction, because `void` looks like a synonym for `undefined` and isn't. A return type of `void` doesn't mean "returns `undefined`" — it means "the caller will ignore the return value." The two differ in one direction: a function typed `() => void` is allowed to return an actual value, and that value is simply discarded by anyone using the type.
+
+:::predict
+`Array.prototype.forEach` types its callback as `(value: T) => void`. The arrow below returns a `number`. Does it type-check?
+:::answer
+Yes. `void` as a return type is a promise about how the caller treats the result, not a constraint on what the callback produces, so TypeScript accepts a callback that returns a value and discards it.
+:::
 
 ```typescript
 const nums = [1, 2, 3];

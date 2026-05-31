@@ -28,7 +28,7 @@ Never reach for `var`, and the reason is scoping. `let` and `const` are block-sc
 
 ## Annotations and inference
 
-The annotation syntax is `name: Type`, which reads like Python's, but the idiom around it is different. In Python, annotating a local is cheap and common, partly because the runtime ignores it anyway and [[mypy]] infers conservatively. TypeScript's inference is aggressive and precise, so the idiom is to annotate at *boundaries* — function parameters, return types, exported values, anything another part of the program consumes — and let everything local infer. An annotation on a local is usually redundant, and worse, it can be a downgrade.
+The annotation syntax is `name: Type`, which reads like Python's, but the idiom around it is different. In Python, annotating a local is cheap and common, partly because the runtime ignores it anyway and [[mypy]] infers conservatively. TypeScript's inference is aggressive and precise, so an annotation on a local is usually redundant, and worse, it can be a downgrade. The resolution is to annotate at *boundaries* — function parameters, return types, exported values, anything another part of the program consumes — and let everything local infer.
 
 :::compare
 ```python
@@ -68,6 +68,12 @@ Three things diverge from Python here, and each has a mechanical reason rather t
 
 First, there is one `number` type, and it is the IEEE-754 double — the same representation Python's `float` uses. There is no separate integer type at all. `3` and `3.0` are not just equal, they are the identical value; `typeof 3` and `typeof 3.0` both report `"number"`, and `Number.isInteger(3.0)` is `true` because `3.0` *is* `3`. This is JavaScript's design, inherited unchanged: the language shipped in 1995 with a single numeric type and TypeScript only describes it. The practical consequences are exactly the ones a double carries. Division never floors — `5 / 2` is `2.5`, and you reach for `Math.floor` or `Math.trunc` when you want Python's `//`. And integers are exact only up to `Number.MAX_SAFE_INTEGER`, which is 2^53 − 1, or `9_007_199_254_740_991`. Past that, the gaps between representable doubles exceed 1 and arithmetic silently rounds:
 
+:::predict
+What does `console.log(9_007_199_254_740_993)` print?
+:::answer
+`9007199254740992` — the value is past `Number.MAX_SAFE_INTEGER`, so it rounds down to the nearest representable double.
+:::
+
 :::play
 ```typescript
 console.log(5 / 2);                    // 2.5 — no floor division
@@ -79,7 +85,7 @@ console.log(0.1 + 0.2);                // 0.30000000000000004 — same double yo
 
 In Python this never bit you for integer counters, because `int` is arbitrary-precision and silently promotes. In TypeScript a counter past 2^53 is a correctness bug, not a slowdown.
 
-That gap is exactly what `bigint` fills — the second divergence. It is a genuinely separate primitive type for arbitrary-precision integers, written with an `n` suffix (`10n`, `9007199254740993n`). It is the closest thing to Python's `int`, but it is not interchangeable with `number`: the compiler rejects `10n + 1` because mixing the two in arithmetic is a `TypeError` at runtime, and TypeScript would rather stop you at compile time. You convert explicitly (`10n + BigInt(1)`, or `Number(10n) + 1`) and accept the cost. Most code never needs it; you want it for things like database bigint IDs or values that genuinely exceed the safe-integer range.
+That gap is exactly what `bigint` fills — the second divergence. It is a genuinely separate primitive type for arbitrary-precision integers, written with an `n` suffix (`10n`, `9007199254740993n`). It is the closest thing to Python's `int`, but it is not interchangeable with `number`: the compiler rejects `10n + 1` with *Operator '+' cannot be applied to types '10n' and '1'.* because mixing the two in arithmetic is a `TypeError` at runtime, and TypeScript would rather stop you at compile time. You convert explicitly (`10n + BigInt(1)`, or `Number(10n) + 1`) and accept the cost. Most code never needs it; you want it for things like database bigint IDs or values that genuinely exceed the safe-integer range.
 
 Third, the type names and the literal values are lowercase: `string`, `number`, `boolean`, `null`, `true`, `false` — not `str`, `True`, `None`. The capitalized `String`, `Number`, and `Boolean` exist, but they are the wrapper *object* types (the result of `new String("x")`, an object, not a primitive), and annotating with them is almost always a mistake. Lowercase for the primitives, every time.
 

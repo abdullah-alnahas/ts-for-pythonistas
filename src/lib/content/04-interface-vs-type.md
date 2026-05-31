@@ -34,17 +34,16 @@ Both forms produce a type that any value with a `name: string` and `age: number`
 
 ## The capability gap: `type` names anything
 
-`type` is a general alias. The name on the left binds to whatever type expression is on the right, and the right side can be any type at all:
+In Python you reach for `TypeAlias` the moment you want to name a union or a tuple, and it takes them without complaint. Try the same with `interface` and there is nowhere to put them: `interface` describes members of an object (or the call signature of a function), and that is the whole of what it can do. A union is not a set of members, so there is nowhere in an `interface` body to put one.
+
+That is the axis. `type` is a general alias: the name on the left binds to whatever type expression is on the right, and the right side can be any type at all.
 
 ```typescript
 type ID = string | number;          // a union
 type Pair = [number, number];       // a tuple
-type Handler = (e: Event) => void;   // a function type
-type Nullable<T> = T | null;         // an alias over a generic
-type UserKeys = keyof User;          // a computed type (Lesson 11)
 ```
 
-`interface` cannot express any of those. It describes members of an object (or the call signature of a function), and that is the whole of what it can do. A union is not a set of members, so there is nowhere in an `interface` body to put one.
+`interface` cannot express either of those.
 
 :::predict
 You want to name "a value that is either a `string` or a `number`." One of these is a syntax error.
@@ -87,7 +86,7 @@ console.log(b);
 
 The closest Python reflex is monkey-patching — reopening a class to staple on `SomeClass.extra = ...`. The analogy is useful but breaks where it matters, and the break is the reason the feature exists. Monkey-patching mutates a real object at runtime; [[declaration merging|declaration-merging]] is purely compile-time, [[erased|type-erasure]] like everything in this layer (Lesson 01). It changes what the type system believes about a name; it produces no code and touches no runtime object.
 
-That distinction explains what [[merging|declaration-merging]] is actually *for*. You almost never want to split your own interface across two declarations — that is the occasional footgun, where two declarations in the same scope pick the same name and the compiler silently folds their members together. ([[Merging|declaration-merging]] is scoped: two interfaces only [[merge|declaration-merging]] when they share a declaration space — both global, or both in the same module or namespace — so same-named interfaces in two separate ES modules stay independent.) The intended use is augmenting a type you do not own. The canonical case is widening a global like `Window` via `declare global`, or adding a field to a third-party library's exports via `declare module`:
+That distinction explains what merging is actually *for*. You almost never want to split your own interface across two declarations — that is the occasional footgun, where two declarations in the same scope pick the same name and the compiler silently folds their members together. (Merging is scoped: two interfaces only merge when they share a declaration space — both global, or both in the same module or namespace — so same-named interfaces in two separate ES modules stay independent.) The intended use is augmenting a type you do not own. The canonical case is widening a global like `Window` via `declare global`, or adding a field to a third-party library's exports via `declare module`:
 
 ```typescript
 // Tell the compiler the global Window has a field your app attaches at startup.
@@ -100,7 +99,7 @@ window.__APP_VERSION__; // now typed as string, no cast needed
 export {}; // makes this file a module so `declare global` is legal
 ```
 
-Python has no static equivalent because it does not need one: you would just read or set the attribute and let the runtime sort it out. Here there is no runtime to fall back on, so the only way to teach the checker about an externally-added member is to [[merge|declaration-merging]] a declaration into the existing interface. A [[merge|declaration-merging]] with a *conflicting* member type is rejected at the [[merge|declaration-merging]] site (TS2717: "Subsequent property declarations must have the same type"), so you can widen a type this way but not lie about an existing field.
+Python has no static equivalent because it does not need one: you would just read or set the attribute and let the runtime sort it out. Here there is no runtime to fall back on, so the only way to teach the checker about an externally-added member is to merge a declaration into the existing interface. A merge with a *conflicting* member type is rejected at the merge site (TS2717: "Subsequent property declarations must have the same type"), so you can widen a type this way but not lie about an existing field.
 
 ## What `interface` does more cleanly: `extends`
 
@@ -142,7 +141,9 @@ What it rejects is extending something that is *not* a statically known object �
 
 ## A seam that surprises people: index signatures
 
-There is one assignability difference that is easy to hit and hard to explain without the [[merging|declaration-merging]] story above. An object typed with a `type` alias is assignable to a `Record<string, number>`; the *same* object typed with an equivalent `interface` is not.
+There is one assignability difference that is easy to hit and hard to explain without the declaration merging story above. An object typed with a `type` alias is assignable to a `Record<string, number>`; the *same* object typed with an equivalent `interface` is not.
+
+Both objects have one number-valued member. One of these two calls type-checks and one does not.
 
 :::play
 ```typescript
@@ -161,7 +162,7 @@ takesRecord(b); // error TS2345: Index signature for type 'string' is missing in
 ```
 :::
 
-`Record<string, number>` means "an object whose keys are all strings mapping to numbers" — an implicit index signature. A `type` alias is closed: once written, its set of members is fixed, so the compiler can prove every property is a `number` and treat it as having that index signature. An `interface` is *open* — [[declaration merging|declaration-merging]] means another declaration could add a member later, and the compiler cannot assume the member it has not seen is a `number`. So it refuses to infer the implicit index signature. The seam is a direct, if distant, consequence of the [[merging|declaration-merging]] capability: the openness that makes [[merging|declaration-merging]] possible is exactly what blocks this assignment. The fix when you need it is to give the interface an explicit index signature (`interface ViaInterface { x: number; [k: string]: number }`) or use a `type`.
+`Record<string, number>` means "an object whose keys are all strings mapping to numbers" — an implicit index signature. A `type` alias is closed: once written, its set of members is fixed, so the compiler can prove every property is a `number` and treat it as having that index signature. An `interface` is *open* — declaration merging means another declaration could add a member later, and the compiler cannot assume the member it has not seen is a `number`. So it refuses to infer the implicit index signature. The seam is a direct, if distant, consequence of the merging capability: the openness that makes merging possible is exactly what blocks this assignment. The fix when you need it is to give the interface an explicit index signature (`interface ViaInterface { x: number; [k: string]: number }`) or use a `type`.
 
 ## A decision rule
 
@@ -173,7 +174,7 @@ The diverging seams reduce to a short rule, and a shorter heuristic on top of it
 | A union (`A \| B`) | `type` | `interface` cannot express a union at all |
 | A tuple, function-type alias, or bare primitive alias | `type` | not an object shape |
 | Anything computed (`keyof`, [[mapped|mapped-types]], [[conditional|conditional-types]]) | `type` | `interface` has no computed form |
-| A shape you must augment from outside (a global, a library type) | `interface` | only `interface` [[merges|declaration-merging]] |
+| A shape you must augment from outside (a global, a library type) | `interface` | only `interface` merges |
 
 The heuristic most teams settle on collapses that to one line: `interface` for object shapes, `type` for everything else. It lands on the right tool the large majority of the time and saves the decision for the cases that actually differ. The one rule worth holding firmly is consistency within a file — mixing the two for identical object shapes in the same module reads as indecision, not nuance.
 
@@ -184,16 +185,16 @@ A reminder that closes the loop with Lesson 01: neither `interface User` nor `ty
 :::quiz
 You define `type Point = { x: number; y: number }` and a function `f(p: Point)`. Must a caller's value be *declared* as `Point` to pass it?
 :::answer
-No — matching is [[structural|structural-typing]] (Lesson 03), and that is independent of whether you wrote `type` or `interface`. Any value with at least `{ x: number; y: number }` is assignable to `Point` regardless of its declared name or origin. The `interface`-vs-`type` choice changes which *features* are available when you name a shape — unions, [[merging|declaration-merging]], the `extends`/`&` distinction — never the [[structural|structural-typing]] rule that decides assignability.
+No — matching is [[structural|structural-typing]] (Lesson 03), and that is independent of whether you wrote `type` or `interface`. Any value with at least `{ x: number; y: number }` is assignable to `Point` regardless of its declared name or origin. The `interface`-vs-`type` choice changes which *features* are available when you name a shape — unions, declaration merging, the `extends`/`&` distinction — never the [[structural|structural-typing]] rule that decides assignability.
 :::
 
 ## Recap
 
 - The axis: `type` names any type; `interface` names only an object or function shape. Unions, tuples, primitive aliases, and computed types must be `type`.
-- Only `interface` supports [[declaration merging|declaration-merging]] — the sanctioned, compile-time way to augment a type you do not own (a global, a library interface). `type` duplicates are an error.
+- Only `interface` supports declaration merging — the sanctioned, compile-time way to augment a type you do not own (a global, a library interface). `type` duplicates are an error.
 - `extends` records a named relationship (cached, clearer errors, conflicts caught at the declaration); `&` eagerly computes a merged shape and defers conflicts to `never`.
 - An interface can `extends` a `type` alias as long as it resolves to an object shape; the boundary is object-vs-not, not interface-vs-type.
-- A `type`-aliased object is assignable to `Record<string, ...>`; the equivalent `interface` is not, because [[merging|declaration-merging]] keeps interfaces open.
+- A `type`-aliased object is assignable to `Record<string, ...>`; the equivalent `interface` is not, because merging keeps interfaces open.
 - Both are [[erased|type-erasure]]. Neither is a `class`; the choice is purely compile-time.
 
 :::quiz

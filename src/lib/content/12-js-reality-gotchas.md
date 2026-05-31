@@ -7,7 +7,7 @@ Lesson 11's type-level machinery — every [[conditional|conditional-types]], [[
 
 ## The two top types: `any` and `unknown`
 
-TypeScript has two types that every other type is assignable to — two "tops." They look similar and behave as opposites, and choosing between them is the single most consequential type decision you make routinely.
+You parse a request body; what type is the result, and how much does the compiler then trust you? TypeScript has two answers — two types that every other type is assignable to, two "tops." They look similar and behave as opposites, and choosing between them is the single most consequential type decision you make routinely.
 
 `any` is an escape hatch from the type system. A value typed `any` accepts every operation — call it, index it, add to it, assign it anywhere — because the checker stops having an opinion. `unknown` is the disciplined version of the same idea: it also holds any value, but it permits *no* operation until you [[narrow|narrowing]] it to something specific.
 
@@ -161,6 +161,12 @@ Why does JavaScript draw the line here and Python there? Because Python lets a t
 
 Objects raise the second half of the equality story. In Python, `==` on objects dispatches to `__eq__`, so two distinct dataclass instances with the same fields compare equal, while `is` checks identity. JavaScript has only identity. `===` on two objects is `true` only when they are the *same* object — the same reference — and there is no `__eq__` to override, because there is no operator overloading in the language at all.
 
+:::predict
+Two objects `a` and `b` hold identical fields. Given Python's `__eq__` reflex, predict what `a === b` yields.
+:::answer
+`false`. `===` compares references, not fields; `a` and `b` are distinct objects, so the result is `false` regardless of contents.
+:::
+
 ```typescript
 const a = { v: 1 };
 const b = { v: 1 };
@@ -188,9 +194,18 @@ The one to add deliberately is `noUncheckedIndexedAccess`. With `strict` alone, 
 ```typescript
 const arr = [1, 2, 3];
 const x: number = arr[10]; // compiles under plain strict; x is undefined at runtime
+// arr[10] is undefined; arr[10].toFixed() -> TypeError: Cannot read properties of undefined
 ```
 
-Turn the flag on and `arr[i]` becomes `number | undefined`, forcing you to handle the out-of-bounds case the same way null safety forces you to handle the missing value. It is left out of `strict` because it is genuinely noisy — every indexed access in existing code suddenly needs a guard — and the TypeScript team keeps `strict` to checks that pay for themselves everywhere. For new code, the safety is worth the noise.
+Turn the flag on and `arr[i]` becomes `number | undefined`, forcing you to handle the out-of-bounds case the same way null safety forces you to handle the missing value:
+
+```typescript
+// with noUncheckedIndexedAccess on, arr[10] is number | undefined
+const v = arr[10];
+if (v !== undefined) v.toFixed(); // the guard the flag now requires
+```
+
+It is left out of `strict` because it is genuinely noisy — every indexed access in existing code suddenly needs a guard — and the TypeScript team keeps `strict` to checks that pay for themselves everywhere. For new code, the safety is worth the noise.
 
 ## Modules: import and export
 

@@ -126,7 +126,7 @@ async function fetchName(): Promise<string> {
 
 `Map.get` returns `number | undefined`, not `number` — the key might be absent, and the type says so, exactly as Python's `dict.get` is typed `int | None`. The async case is stricter than Python's: an `async` function's annotated return type must be `Promise<T>`. Writing `async function fetchName(): string` is a compile error (TS1064), because the function literally returns a promise regardless of what you do inside it. Python lets you annotate an `async def` with `-> str` and infers the coroutine wrapper around it; TypeScript makes you name the `Promise<>` explicitly. Same underlying reality, less implicit.
 
-You declare your own generic types the same way:
+An API response wraps a varying payload around a fixed envelope — the same `status` field, different `data` each time. That need is what `ApiResponse<T>` expresses, and you declare your own generic types the same way the built-ins are declared:
 
 ```typescript
 interface ApiResponse<T> {
@@ -202,14 +202,14 @@ longest(1, 2);        // two numbers
 - (x) The string and array calls compile; the number call is an error.
 - ( ) All three — `extends` is advisory and TypeScript widens to satisfy it.
 :::answer
-The first two compile, the third errors (TS2345). Neither `string` nor `Array` was ever declared to "implement" an interface named `HasLength` — that interface might not have existed when they were defined. But each *has* a `length: number` member, and [[structural|structural-typing]] assignability is all `extends` checks. `number` has no `length`, so `longest(1, 2)` is rejected. Read `T extends C` as Python's `bound=C` under [[structural typing|nominal-vs-structural]]: "any type whose shape includes `C`," never "any subclass of `C`." A class you write that happens to have a `length: number` field satisfies the bound without naming it.
+The first two compile, the third errors (TS2345: `Argument of type 'number' is not assignable to parameter of type 'HasLength'.`). Neither `string` nor `Array` was ever declared to "implement" an interface named `HasLength` — that interface might not have existed when they were defined. But each *has* a `length: number` member, and [[structural|structural-typing]] assignability is all `extends` checks. `number` has no `length`, so `longest(1, 2)` is rejected. Read `T extends C` as Python's `bound=C` under [[structural typing|nominal-vs-structural]]: "any type whose shape includes `C`," never "any subclass of `C`." A class you write that happens to have a `length: number` field satisfies the bound without naming it.
 :::
 
 So a constraint does two jobs at once: it filters which types may instantiate `T`, and it tells the compiler the minimum shape every `T` has, which is what unlocks member access. Without it, `T` is a sealed box you can move but not open.
 
 ## Default type parameters
 
-A type parameter can carry a default, the way PEP 696 added defaults to Python's `TypeVar` (3.13):
+On a type meant to be configured but usually left alone, writing `Container<string>` at every use site is noise when `string` is the default. A type parameter can carry a default to remove it, the way PEP 696 added defaults to Python's `TypeVar` (3.13):
 
 ```typescript
 interface Container<T = string> {
@@ -220,7 +220,7 @@ const a: Container = { value: "hi" }; // T defaults to string
 const b: Container<number> = { value: 1 };
 ```
 
-The default applies only where you write `Container` bare and the compiler has no value to solve `T` from; if `T` can be inferred, inference wins. It earns its keep on types meant to be configured but usually left alone — a generic event emitter defaulting its payload to `unknown`, a container defaulting its element type.
+The default applies only where you write `Container` bare and the compiler has no value to solve `T` from; if `T` can be inferred, inference wins. It earns its keep on a generic event emitter defaulting its payload to `unknown`, a container defaulting its element type.
 
 ## `keyof` with generics: the pattern you'll see everywhere
 
@@ -261,7 +261,7 @@ function pluck<T>(items: T[], key): unknown {
 }
 ```
 :::answer
-Two errors. First, `key` has no annotation, so under `strict` it's an implicit `any` (TS7006). Second, indexing fails: `item[key]` is reported as an implicit `any` element access (TS7053), because the compiler can't show that an unconstrained key indexes `T`. The second error is downstream of the first — once `key` is properly typed as a key of `T`, the access is legal even though `T` itself stays opaque — so one change fixes both: introduce a second, constrained type parameter for the key.
+Two errors. First, `key` has no annotation, so under `strict` it's an implicit `any` (TS7006: `Parameter 'key' implicitly has an 'any' type.`). Second, indexing fails: `item[key]` is reported as an implicit `any` element access (TS7053), because the compiler can't show that an unconstrained key indexes `T`. The second error is downstream of the first — once `key` is properly typed as a key of `T`, the access is legal even though `T` itself stays opaque — so one change fixes both: introduce a second, constrained type parameter for the key.
 
 ```typescript
 function pluck<T, K extends keyof T>(items: T[], key: K): T[K][] {

@@ -72,6 +72,8 @@ The payoff is a single source of truth. The runtime array drives the runtime beh
 
 That pattern you wrote by hand; most type-level transforms you'll never write, because TypeScript ships a standard library of them. You'll spend most of your time *consuming* these rather than authoring your own. The ones worth knowing on sight:
 
+Skim this as a catalog; the mechanism behind the derivations comes in the next two sections.
+
 ```typescript
 interface User { id: number; name: string; email: string }
 
@@ -176,6 +178,12 @@ type D = ElementOf<string>;    // string
 
 The behavior that makes [[conditional types|conditional-types]] feel like a real language is **distribution**. When the type being checked is a bare type parameter and you hand it a union, the compiler doesn't test the union as a whole — it applies the conditional to each member separately, then unions the results. That is the entire mechanism behind `Exclude`:
 
+:::predict
+What is `Exclude<'a' | 'b' | 'c', 'a'>`, and does the conditional see the union whole or one member at a time?
+:::answer
+The result is `'b' | 'c'`. Because the checked type is a bare parameter and the argument is a union, the conditional distributes: it sees one member at a time, evaluates `T extends 'a' ? never : T` for each, then unions the results. `'a'` maps to `never` and drops out, leaving `'b' | 'c'`.
+:::
+
 ```
   type Exclude<T, U> = T extends U ? never : T;
 
@@ -217,7 +225,8 @@ type OrderId = Brand<string, "OrderId">;
 function getUser(id: UserId) { /* ... */ }
 
 const raw = "u_123";
-getUser(raw);            // Error: 'string' is not assignable to 'UserId'
+// Drop 'as const' on the brand and Role widens to string — then `const bad: Role = "nope"` compiles, defeating the point.
+getUser(raw);            // Argument of type 'string' is not assignable to parameter of type 'UserId'.
 getUser(raw as UserId);  // OK — mint the brand explicitly at the boundary
 ```
 

@@ -37,7 +37,11 @@ greet("Ada", "Dr", "vip", "new");
 ```
 :::
 
-An optional parameter is marked with `?`, and inside the body its type is `string | undefined` — the `?` is exactly shorthand for adding `| undefined` (Lesson 06). A defaulted parameter (`title: string = "Dr"`) is also optional from the caller's side, but inside the body it reads as `string`, because the default guarantees a value was bound. Rest is `...tags: string[]`, the analog of `*args`, and the binding is a real `Array`, not a tuple — once arguments fall into the rest slot, no per-position type survives.
+An optional parameter is marked with `?`, and inside the body its type is `string | undefined` — the `?` is exactly shorthand for adding `| undefined` (Lesson 06).
+
+A defaulted parameter (`title: string = "Dr"`) is also optional from the caller's side, but inside the body it reads as `string`, because the default guarantees a value was bound.
+
+Rest is `...tags: string[]`, the analog of `*args`, and the binding is a real `Array`, not a tuple — once arguments fall into the rest slot, no per-position type survives.
 
 The constraint that optional params must follow required ones is the same rule Python enforces, and for the same reason: arguments are matched positionally, so there's no way to supply a later argument while skipping an earlier optional one. But there's a subtlety that doesn't exist in Python, and it's worth being precise about: an optional parameter and an explicitly `| undefined` parameter are *not* interchangeable for callers.
 
@@ -222,7 +226,7 @@ console.log("never reached");
 ```
 :::
 
-Running it shows the failure: `f()` has no receiver, so `this` is `undefined` in strict-mode JavaScript, and `this.count++` throws. Why this is a *runtime* surprise and not a compile error is the interesting part. Method shorthand on an object literal gives `inc` an *implicit* `this` of the object's type, but that constraint is attached to the method, not to the standalone function value you get by reading `counter.inc`. The detached value has type `() => void` with no `this` requirement, so the bare call `f()` type-checks even though it's the bug. The type system models JavaScript's actual `this` rule faithfully — and that rule is that a bare call has no receiver.
+Running it shows the failure: `f()` has no receiver, so `this` is `undefined` in strict-mode JavaScript, and `this.count++` throws. The call `f()` throws `TypeError: Cannot read properties of undefined (reading 'count')` — there is no receiver, so `this` is undefined. Why this is a *runtime* surprise and not a compile error is the interesting part. Method shorthand on an object literal gives `inc` an *implicit* `this` of the object's type, but that constraint is attached to the method, not to the standalone function value you get by reading `counter.inc`. The detached value has type `() => void` with no `this` requirement, so the bare call `f()` type-checks even though it's the bug. The type system models JavaScript's actual `this` rule faithfully — and that rule is that a bare call has no receiver.
 
 Arrow functions opt out of the whole mechanism. An arrow has no `this` of its own; it closes over the `this` of the scope where it was written, lexically, the way any other free variable is captured. That's why an arrow used as a callback keeps pointing at the right object even when the callback is invoked later, with no dot, by some scheduler that knows nothing about your instance:
 

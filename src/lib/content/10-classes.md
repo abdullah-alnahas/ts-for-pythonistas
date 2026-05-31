@@ -156,7 +156,16 @@ There is exactly one built-in exception, and it follows from the previous sectio
 :::quiz
 `show({ x: 1, y: 2 })` is accepted where a `Point` instance is expected. Add a single `private id = 0` field to `Point` and the same call now fails to compile. One private field flips the whole rule — why?
 :::answer
-A `private` or `#` member acts as a [[nominal|nominal-vs-structural]] [[brand|branded-types]]. The compiler treats it as a member that *only* a value originating from that exact class declaration can possess, because the field's identity is tied to the declaration, not to its name. A bare object literal has no such origin, so it can never carry the [[brand|branded-types]] — and assignability fails. The mechanism is sharper than "matching members": two different classes that each declare `private id = 0` are also mutually incompatible, with the error "Types have separate declarations of a private property 'id'." Same field name, same type, two declarations, two distinct [[brands|branded-types]]. This is the deliberate way to force [[nominal typing|nominal-vs-structural]] in a [[structural|structural-typing]] system: give a class a private member and only its real instances will satisfy it.
+A `private` or `#` member acts as a [[nominal|nominal-vs-structural]] [[brand|branded-types]]. The compiler treats it as a member that *only* a value originating from that exact class declaration can possess, because the field's identity is tied to the declaration, not to its name. A bare object literal has no such origin, so it can never carry the [[brand|branded-types]] — and assignability fails. The mechanism is sharper than "matching members": two different classes that each declare `private id = 0` are also mutually incompatible. Same field name, same type, two declarations, two distinct [[brands|branded-types]]:
+
+```typescript
+class A { private id = 0; }
+class B { private id = 0; }
+
+let b: B = new A(); // TS2322: Type 'A' is not assignable to type 'B'. Types have separate declarations of a private property 'id'.
+```
+
+This is the deliberate way to force [[nominal typing|nominal-vs-structural]] in a [[structural|structural-typing]] system: give a class a private member and only its real instances will satisfy it.
 :::
 
 ## Inheritance, abstract classes, and implements
@@ -213,7 +222,7 @@ render({ draw() {} }); // no `implements` anywhere, still accepted
 
 ## Getters, setters, and statics
 
-The last familiar corner. `get`/`set` are the [[descriptor|descriptor-protocol]]-backed accessors you know as `@property` and its setter, and `static` members hang off the constructor rather than the instance.
+The last familiar corner, with one gap to work around: TypeScript has no `@classmethod`, so how do you write an alternate constructor — the named factory you'd reach for `cls` to build? `get`/`set` are the [[descriptor|descriptor-protocol]]-backed accessors you know as `@property` and its setter, and `static` members hang off the constructor rather than the instance. The `fromF` factory below is the answer to the alternate-constructor question.
 
 :::play
 ```typescript
@@ -239,7 +248,10 @@ A `get` with no matching `set` is read-only from outside: assigning to it is `TS
 
 ## One last divergence: fields define, they don't assign
 
-There is a subtlety that does not show up until you subclass, and it is the third misleading-familiarity case from the opening. Under a modern compile target, TypeScript class fields use *define* semantics — the field is installed with the equivalent of `Object.defineProperty` (the spec's `[[DefineOwnProperty]]`), which writes a fresh own property directly onto the instance — rather than *set* semantics, an ordinary assignment that would consult the [[prototype chain|prototype-chain]]. The difference is invisible until a subclass field collides with an inherited accessor:
+There is a subtlety that does not show up until you subclass, and it is the third misleading-familiarity case from the opening. Under a modern compile target, TypeScript class fields use *define* semantics — the field is installed with the equivalent of `Object.defineProperty` (the spec's `[[DefineOwnProperty]]`), which writes a fresh own property directly onto the instance — rather than *set* semantics, an ordinary assignment that would consult the [[prototype chain|prototype-chain]]. The difference is invisible until a subclass field collides with an inherited accessor.
+
+:::predict
+`Base` declares a `get x`/`set x` accessor pair. `Derived extends Base` declares `x = 2` as an instance field. Predict what `new Derived().x` returns and whether the base setter fires.
 
 ```typescript
 class Base {
@@ -247,11 +259,17 @@ class Base {
   set x(v: number) { /* validate, log, etc. */ }
 }
 class Derived extends Base {
-  x = 2; // TS2610: 'x' is an accessor in Base, but is overridden here as an instance property
+  x = 2; // ?
 }
 ```
 
-The Python intuition is that `x = 2` in the subclass routes through the inherited setter — assigning `self.x` invokes an inherited data [[descriptor|descriptor-protocol]]. Under `[[Define]]` it does not: the field declaration defines a fresh own property with `Object.defineProperty`, which installs straight over the [[prototype's|prototype-chain]] accessor without ever calling it. Were the compiler to allow it, the base's setter would be silently dead. It doesn't allow it — TypeScript flags the collision with `TS2610` and makes you say what you mean. (The mechanism is the [[descriptor protocol|descriptor-protocol]] on both sides; what differs is whether `[[Define]]` or `[[Set]]` runs.) You can confirm the runtime split: with the default `[[Define]]`, reading `Derived().x` yields `2` and the base setter never fires; flip `useDefineForClassFields` to `false` and the same source yields `1` while the setter records the write — assignment, the Python behavior.
+- ( ) `2`, and the base setter runs once with `2` — the field assignment routes through the inherited setter the way Python's data descriptor would.
+- ( ) `1`, and the base setter fires — the field never installs because the accessor wins.
+- (x) Neither happens as written — the compiler rejects the field with `TS2610` before any of this runs.
+- ( ) `2`, and the base setter never fires, with no compile error.
+:::answer
+The compiler rejects it: `TS2610: 'x' is an accessor in Base, but is overridden here as an instance property`. The Python intuition is that `x = 2` in the subclass routes through the inherited setter — assigning `self.x` invokes an inherited data [[descriptor|descriptor-protocol]]. Under `[[Define]]` it does not: the field declaration defines a fresh own property with `Object.defineProperty`, which installs straight over the [[prototype's|prototype-chain]] accessor without ever calling it. Were the compiler to allow it, the base's setter would be silently dead. It doesn't allow it — TypeScript flags the collision and makes you say what you mean. If you suppress the error and run it: with the default `[[Define]]`, `new Derived().x` yields `2` and the base setter never fires; flip `useDefineForClassFields` to `false` and the same source yields `1` while the setter records the write — assignment, the Python behavior.
+:::
 
 So you have two intents and a modifier for each. If you really want a fresh own field, the explicit form is an accessor pair or a field on a non-accessor base. If you mean "the base already provides this, I'm only narrowing its type for the checker, don't emit anything," that is the `declare` modifier (`declare x: number`), which records the type and produces no field — the clean opt-out of `[[Define]]` when redefinition is exactly what you don't want.
 

@@ -67,8 +67,6 @@ console.log(greeting.toUpperCase());
 ```
 :::
 
-Before reading on: you compile `greet.ts` with `tsc`. In the emitted JavaScript, what becomes of `: string`?
-
 :::predict
 What does the emitted `greet.js` contain — specifically, what becomes of `: string`?
 
@@ -135,9 +133,11 @@ Back to the last row of the table. Because checking and emitting are separate st
 
 Run this; the error is reported and the program runs anyway:
 
+`tsc` reports a type error on line 1. Predict whether a `.js` file is still written.
+
 :::play
 ```typescript
-const n: number = "not a number"; // tsc reports an error here
+const n: number = "not a number"; // TS2322: Type 'string' is not assignable to type 'number'
 console.log(n);                    // it runs anyway
 ```
 :::

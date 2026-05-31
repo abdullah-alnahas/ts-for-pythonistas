@@ -109,7 +109,7 @@ You have `interface Fish { swim(): void }` and want to narrow `a: Fish | Bird`. 
 
 ### `in` — property presence
 
-`in` is the [[structural|structural-typing]] way to tell object shapes apart, and the natural fit for a union of plain object types that share no common tag:
+Two object types that share no constructor and no tag can't be told apart by `typeof` or `instanceof` — `in` is what's left. It is the [[structural|structural-typing]] way to tell object shapes apart, and the natural fit for a union of plain object types that share no common tag:
 
 :::play
 ```typescript
@@ -168,6 +168,19 @@ function area(s: Shape): number {
     case "circle": return Math.PI * s.r * s.r; // s: the circle variant
     case "square": return s.side * s.side;     // s: the square variant
     default:
+      throw new Error("unknown kind"); // a plain runtime guard
+  }
+}
+```
+
+The `default` branch is the part worth dwelling on, because it can do more than throw at runtime. Replace that bare `throw` with a call to an `assertNever` helper and the same branch becomes a *compile-time* exhaustiveness check:
+
+```typescript
+function area(s: Shape): number {
+  switch (s.kind) {
+    case "circle": return Math.PI * s.r * s.r; // s: the circle variant
+    case "square": return s.side * s.side;     // s: the square variant
+    default:
       return assertNever(s); // s: never — see below
   }
 }
@@ -177,7 +190,7 @@ function assertNever(x: never): never {
 }
 ```
 
-The `default` branch is the part worth dwelling on, because it turns narrowing into a maintenance tool. By the time control reaches it, both `case`s have eliminated their variants, so the compiler narrows `s` to `never` — the bottom type, the one no value inhabits. Passing `s` to a parameter typed `never` type-checks only while `s` really is `never`. Add a third variant to `Shape` later and forget to handle it, and `s` in the `default` is now that variant, not `never`; `assertNever(s)` stops compiling:
+That upgrade turns narrowing into a maintenance tool. By the time control reaches the `default`, both `case`s have eliminated their variants, so the compiler narrows `s` to `never` — the bottom type, the one no value inhabits. Passing `s` to a parameter typed `never` type-checks only while `s` really is `never`. Add a third variant to `Shape` later and forget to handle it, and `s` in the `default` is now that variant, not `never`; `assertNever(s)` stops compiling:
 
 ```
 Argument of type '{ kind: "triangle"; ... }' is not assignable to parameter of type 'never'.
