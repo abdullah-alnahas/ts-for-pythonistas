@@ -104,6 +104,19 @@ type UserPatch  = Partial<Omit<User, "id">>; // PATCH body: optional, no id
 
 Add `email: string` to `User`, and `PublicUser` gains `email` while `UserPatch` gains `email?` — both on the next compile, with no edit to either derived line. The hand-maintained `TypedDict` pair has no equivalent guarantee; nothing fails when the two drift apart, which is precisely how they drift apart.
 
+Now you try, before reading on:
+
+:::predict
+Given `interface User { id: number; name: string; admin: boolean }`, what exact shape does `Partial<Pick<User, "id" | "name">>` produce?
+
+- ( ) `{ id: number; name: string }` — `Pick` keeps the two fields, and `Partial` here is a no-op.
+- (x) `{ id?: number; name?: string }` — `Pick` keeps `id` and `name`, then `Partial` makes both optional.
+- ( ) `{ id?: number; name?: string; admin?: boolean }` — `Partial` reaches every field of `User`.
+- ( ) An error — `Partial` and `Pick` cannot be composed.
+:::answer
+`{ id?: number; name?: string }`. Composition runs inside-out: `Pick<User, "id" | "name">` first selects those two keys to give `{ id: number; name: string }`, and `Partial<…>` then maps the *result*, marking each surviving key optional. `admin` was dropped by the inner `Pick` and never reaches `Partial`, which is why it isn't in the output. Swap the order to `Pick<Partial<User>, "id" | "name">` and you get the same shape here — but in general each utility transforms only the type handed to it, so read the nesting from the inside out.
+:::
+
 ## Mapped types — transforming every key
 
 The utilities above aren't compiler magic. They're written in the same language you have access to, and the construct underneath most of them is the [[mapped type|mapped-types]]. The runtime analog is a dict comprehension; the difference is that this one runs over a *type*.
