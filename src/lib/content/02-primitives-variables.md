@@ -22,7 +22,7 @@ X = 2;           // error: Cannot assign to 'X' because it is a constant.
 ```
 :::
 
-The boundary `const` draws is the same one `Final` draws: it blocks *rebinding the name*, not *mutating the object the name points at*. `const arr = [1]; arr.push(2)` is fine, because `push` never reassigns `arr` — it mutates the array `arr` already refers to. This is the reference/binding distinction you already hold from Python; `const` governs the binding, not the referent.
+The boundary `const` draws is the same one `Final` draws: it blocks *rebinding the name*, not *mutating the object the name points at*. `const arr = [1]; arr.push(2)` is fine, because `push` never reassigns `arr` — it mutates the array `arr` already refers to. This is the reference/binding distinction you already hold from Python; `const` governs the binding, not the referent. If you've used Java or C++, `const` is `final` on a Java local or `T* const` in C++ — the binding is fixed, the object behind it is not — and like `final` it's checked, except `const` is enforced by the JavaScript runtime as well, not only the compiler.
 
 Never reach for `var`, and the reason is scoping. `let` and `const` are block-scoped — bound to the nearest enclosing `{}` — and live in the [[temporal dead zone|tdz]] from the top of that block until their declaration line, so reading them early throws a `ReferenceError`. `var` is function-scoped and hoisted to `undefined`, so a read before the declaration returns `undefined` silently instead of failing. That silent `undefined` is the bug class `let`/`const` were designed to kill; it has no Python analogue, because Python's scoping is already function-level and raises a loud `UnboundLocalError` instead. You will see `var` in old code; you should not write it.
 
